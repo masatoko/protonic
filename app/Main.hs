@@ -3,5 +3,5 @@ module Main where
 import Protonic
 
 main :: IO ()
-main = do
+main = runProto $
   putStrLn "protonic"

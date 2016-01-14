@@ -2,10 +2,8 @@
 
 module Protonic where
 
-import           Control.Concurrent      (forkIO)
 import           Control.Exception       (bracket, bracket_)
-import           Control.Monad           (forever, unless, void)
-import           Control.Monad.IO.Class  (MonadIO)
+import           Control.Monad           (unless)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
@@ -13,12 +11,10 @@ import qualified Data.Text               as T
 import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
-import           Linear.V4
-import           System.IO
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
-import           SDL                     (($=))
+-- import           SDL                     (($=))
 import qualified SDL
 import           SDL.Raw                 (Color (..))
 
@@ -55,31 +51,31 @@ newtype ProtoT a = Proto {
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
 runProtoT :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
-runProtoT conf state k =
-  runStateT (runReaderT (runP k) conf) state
+runProtoT conf stt k =
+  runStateT (runReaderT (runP k) conf) stt
 
-runProtonic :: IO ()
-runProtonic =
+runProtonic :: (SDL.Renderer -> IO ()) -> IO ()
+runProtonic renderFunc =
   withSDL $
     TTF.withInit $
-      bracket (TTF.openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
+      bracket (TTF.openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
-          runProtoT conf state (mainLoop r)
+          runProtoT conf stt (mainLoop r renderFunc)
           return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
     --
-    state = initialState
+    stt = initialState
 
-mainLoop :: SDL.Renderer -> ProtoT ()
-mainLoop r =
+mainLoop :: SDL.Renderer -> (SDL.Renderer -> IO ()) -> ProtoT ()
+mainLoop r renderFunc =
   go =<< SDL.ticks
   where
     go t = do
       --
       procEvents
-      render r
+      render r renderFunc
       updateFPS
       printFPS
       SDL.present r
@@ -124,7 +120,7 @@ systemText pos str = do
   liftIO $ do
     (w,h) <- TTF.sizeText font str
     runManaged $ do
-      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 255 255 255 255)) SDL.freeSurface
+      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 0 255 0 255)) SDL.freeSurface
       texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
       let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
       SDL.copy r texture Nothing rect
@@ -148,10 +144,5 @@ procEvents = SDL.mapEvents (work . SDL.eventPayload)
     work (SDL.WindowClosedEvent _) = modify (\s -> s {psClosed = True})
     work _ = return ()
 
-render :: SDL.Renderer -> ProtoT ()
-render r = do
-  SDL.rendererDrawColor r $= V4 0 0 0 255
-  SDL.clear r
-  --
-  -- Rendering
-  --
+render :: SDL.Renderer -> (SDL.Renderer -> IO ()) -> ProtoT ()
+render r f = liftIO $ f r

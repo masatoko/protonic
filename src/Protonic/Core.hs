@@ -57,7 +57,7 @@ runProtoT conf stt k =
 
 runProtonic :: ProtoT () -> IO ()
 runProtonic render =
-  withSDL $
+  bracket_ SDL.initializeAll SDL.quit $
     TTF.withInit $
       bracket (openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
@@ -65,9 +65,21 @@ runProtonic render =
           _ <- runProtoT conf stt (mainLoop r render)
           return ()
   where
-    withSDL = bracket_ SDL.initializeAll SDL.quit
-    --
     stt = initialState
+    --
+    withRenderer :: (SDL.Renderer -> IO a) -> IO a
+    withRenderer work = withW $ withR work
+      where
+        withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
+                        SDL.destroyWindow
+        withR f win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
+                              SDL.destroyRenderer
+                              f
+        winConf = SDL.defaultWindow
+          { SDL.windowMode = SDL.Windowed
+          , SDL.windowResizable = False
+          , SDL.windowInitialSize = V2 640 480
+          }
 
 mainLoop :: SDL.Renderer -> ProtoT () -> ProtoT ()
 mainLoop r render =
@@ -141,20 +153,6 @@ openFont str size = do
   p <- doesFileExist str
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
-
-withRenderer :: (SDL.Renderer -> IO a) -> IO a
-withRenderer work = withW $ withR work
-  where
-    withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
-                    SDL.destroyWindow
-    withR f win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
-                          SDL.destroyRenderer
-                          f
-    winConf = SDL.defaultWindow
-      { SDL.windowMode = SDL.Windowed
-      , SDL.windowResizable = False
-      , SDL.windowInitialSize = V2 640 480
-      }
 
 procEvents :: ProtoT ()
 procEvents = SDL.mapEvents (work . SDL.eventPayload)

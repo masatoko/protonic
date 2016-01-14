@@ -5,7 +5,6 @@ import           Control.Monad.Reader
 import           Linear.V2
 
 import qualified Graphics.UI.SDL.TTF     as TTF
-import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import qualified SDL
 import           SDL.Raw                 (Color (..))
 

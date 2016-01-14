@@ -38,6 +38,8 @@ data ProtoState = ProtoState
   , actualFPS         :: !Int
   } deriving Show
 
+data Proto = Proto ProtoConfig ProtoState
+
 initialState :: ProtoState
 initialState = ProtoState
   { psClosed = False
@@ -48,22 +50,21 @@ initialState = ProtoState
   , actualFPS = 0
   }
 
-newtype ProtoT a = Proto {
-    runP :: ReaderT ProtoConfig (StateT ProtoState IO) a
+newtype ProtoT a = ProtoT {
+    runPT :: ReaderT ProtoConfig (StateT ProtoState IO) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
-runProtoT :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
-runProtoT conf stt k =
-  runStateT (runReaderT (runP k) conf) stt
+runProtoT :: Proto -> ProtoT a -> IO (a, ProtoState)
+runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
 
-runProtonic :: ProtoT () -> IO ()
-runProtonic render =
+withProtonic :: (Proto -> IO ()) -> IO ()
+withProtonic go =
   bracket_ SDL.initializeAll SDL.quit $
     TTF.withInit $
       withRenderer $ \r ->
         withConf r $ \conf -> do
-          _ <- runProtoT conf initialState (mainLoop r render)
-          return ()
+          let proto = Proto conf initialState
+          go proto
   where
     withConf r work = do
       let path = "data/font/system.ttf"
@@ -90,8 +91,14 @@ runProtonic render =
           , SDL.windowInitialSize = V2 300 300
           }
 
-mainLoop :: SDL.Renderer -> ProtoT () -> ProtoT ()
-mainLoop r render =
+-- Start game
+runGame :: Proto -> ProtoT () -> IO ()
+runGame proto render = do
+  runProtoT proto (mainLoop render)
+  return ()
+
+mainLoop :: ProtoT () -> ProtoT ()
+mainLoop render =
   go =<< SDL.ticks
   where
     go t = do

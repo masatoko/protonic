@@ -2,6 +2,7 @@
 
 module Protonic where
 
+import Control.Monad (unless)
 import           Control.Concurrent     (threadDelay)
 import           Control.Exception      (bracket, bracket_)
 import           Control.Monad.IO.Class (MonadIO)
@@ -17,16 +18,22 @@ import qualified SDL
 
 data ProtoConfig = ProtoConfig
 data ProtoState = ProtoState
+  { psClosed :: !Bool
+  } deriving Show
+
+initialState :: ProtoState
+initialState = ProtoState
+  { psClosed = False
+  }
 
 newtype ProtoT a = Proto {
     runP :: ReaderT ProtoConfig (StateT ProtoState IO) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
 runProtonic :: ProtoT a -> IO (a, ProtoState)
-runProtonic k = runStateT (runReaderT (runP k) config) state
+runProtonic k = runStateT (runReaderT (runP k) config) initialState
   where
     config = ProtoConfig
-    state = ProtoState
 
 withProtonic :: IO ()
 withProtonic =
@@ -38,16 +45,15 @@ withProtonic =
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
     --
-    loop :: SDL.Renderer -> ProtoT a
+    loop :: SDL.Renderer -> ProtoT ()
     loop r = do
-      liftIO $ do
-        threadDelay 1000000
-        putChar '.' >> hFlush stdout
+      liftIO $ threadDelay 100
       --
       procEvents
       render r
       --
-      loop r
+      quit <- gets psClosed
+      unless quit (loop r)
 
 withRenderer :: (SDL.Renderer -> IO a) -> IO a
 withRenderer work = withW $ withR work
@@ -62,7 +68,7 @@ procEvents :: ProtoT ()
 procEvents = SDL.mapEvents (work . SDL.eventPayload)
   where
     work :: SDL.EventPayload -> ProtoT ()
-    work (SDL.WindowClosedEvent _) = return ()
+    work (SDL.WindowClosedEvent _) = modify (\s -> s {psClosed = True})
     work _ = return ()
 
 render :: SDL.Renderer -> ProtoT ()

@@ -27,6 +27,8 @@ data ProtoState = ProtoState
   { psClosed :: !Bool
   , graphFlushedCount :: !Int
   , graphFlushedTime :: !Time
+  --
+  , debugShowFPS :: Bool
   } deriving Show
 
 defaultConfig :: ProtoConfig
@@ -39,6 +41,8 @@ initialState = ProtoState
   { psClosed = False
   , graphFlushedCount = 0
   , graphFlushedTime = 0
+  --
+  , debugShowFPS = False
   }
 
 newtype ProtoT a = Proto {
@@ -47,7 +51,11 @@ newtype ProtoT a = Proto {
 
 runProtonic :: ProtoT a -> IO (a, ProtoState)
 runProtonic k =
-  runStateT (runReaderT (runP k) defaultConfig) initialState
+  runStateT (runReaderT (runP k) defaultConfig) state
+  where
+    state = initialState
+      { debugShowFPS = True
+      }
 
 withProtonic :: IO ()
 withProtonic =
@@ -92,7 +100,9 @@ mainLoop r =
       when (curT - preT > 1000) $ do
         -- draw FPS
         actualFPS <- gets graphFlushedCount
-        liftIO . putStrLn $ "FPS: " ++ show actualFPS -- TODO: Draw on screen
+        showFPS <- gets debugShowFPS
+        when showFPS $
+          liftIO . putStrLn $ "FPS: " ++ show actualFPS -- TODO: Draw on screen
         modify (\s -> s {graphFlushedTime = curT})
         modify (\s -> s {graphFlushedCount = 0})
 

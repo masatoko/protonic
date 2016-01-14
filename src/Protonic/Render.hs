@@ -21,7 +21,7 @@ clearBy color = do
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
 
-testText :: Integral a => V2 a -> V4 Word8 -> String -> ProtoT ()
+testText :: V2 Int -> V4 Word8 -> String -> ProtoT ()
 testText pos (V4 r g b a) str = do
   font <- asks systemFont
   rndr <- asks renderer

@@ -75,7 +75,7 @@ mainLoop r renderFunc =
     go t = do
       --
       procEvents
-      render r renderFunc
+      liftIO $ renderFunc r
       updateFPS
       printFPS
       SDL.present r
@@ -157,6 +157,3 @@ procEvents = SDL.mapEvents (work . SDL.eventPayload)
     work _ = return ()
 
     quit = modify (\s -> s {psClosed = True})
-
-render :: SDL.Renderer -> (SDL.Renderer -> IO ()) -> ProtoT ()
-render r f = liftIO $ f r

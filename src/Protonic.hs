@@ -82,6 +82,7 @@ mainLoop r =
       quit <- gets psClosed
       unless quit (go t')
 
+    -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
     wait t = do
       t' <- SDL.ticks

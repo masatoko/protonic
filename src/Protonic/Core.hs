@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Protonic where
+module Protonic.Core where
 
 import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad           (unless)

@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Protonic
-  other-modules:       Protonic.Render
+  other-modules:       Protonic.Core
+                     , Protonic.Render
   -- other-extensions:
   pkgconfig-depends:   sdl2 >= 2
                      , SDL2_ttf >= 2

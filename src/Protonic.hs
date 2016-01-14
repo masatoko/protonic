@@ -147,8 +147,11 @@ procEvents :: ProtoT ()
 procEvents = SDL.mapEvents (work . SDL.eventPayload)
   where
     work :: SDL.EventPayload -> ProtoT ()
-    work (SDL.WindowClosedEvent _) = modify (\s -> s {psClosed = True})
+    work (SDL.WindowClosedEvent _) = quit
+    work  SDL.QuitEvent            = quit
     work _ = return ()
+
+    quit = modify (\s -> s {psClosed = True})
 
 render :: SDL.Renderer -> (SDL.Renderer -> IO ()) -> ProtoT ()
 render r f = liftIO $ f r

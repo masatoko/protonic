@@ -20,10 +20,10 @@ import           SDL.Raw                 (Color (..))
 type Time = Word32
 
 data ProtoConfig = ProtoConfig
-  { graphFPS   :: Int
+  { graphFPS         :: Int
   -- Resource
-  , renderer   :: SDL.Renderer
-  , systemFont :: TTFFont
+  , renderer         :: SDL.Renderer
+  , systemFont       :: TTFFont
   -- Debug
   , debugPrintSystem :: Bool
   }
@@ -32,7 +32,7 @@ data ProtoState = ProtoState
   { psClosed          :: !Bool
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
-  , frameCount :: !Integer
+  , frameCount        :: !Integer
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -78,7 +78,7 @@ runProtonic render =
         winConf = SDL.defaultWindow
           { SDL.windowMode = SDL.Windowed
           , SDL.windowResizable = False
-          , SDL.windowInitialSize = V2 640 480
+          , SDL.windowInitialSize = V2 300 300
           }
 
 mainLoop :: SDL.Renderer -> ProtoT () -> ProtoT ()

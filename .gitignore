@@ -1,5 +1,7 @@
 stack.yaml
 
+data/
+
 ### Haskell ###
 dist
 cabal-dev

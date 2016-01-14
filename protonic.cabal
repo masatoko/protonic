@@ -26,6 +26,7 @@ library
                      , transformers
                      , mtl
                      , text
+                     , managed
                      , linear
                      , sdl2 >= 2
                      , sdl2-ttf >= 0.2.2

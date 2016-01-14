@@ -2,39 +2,43 @@
 
 module Protonic where
 
-import Control.Monad (unless, void, forever)
-import Control.Concurrent (forkIO)
-import           Control.Exception      (bracket, bracket_)
-import           Control.Monad.IO.Class (MonadIO)
+import           Control.Concurrent      (forkIO)
+import           Control.Exception       (bracket, bracket_)
+import           Control.Monad           (forever, unless, void)
+import           Control.Monad.IO.Class  (MonadIO)
+import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.Text              as T
+import qualified Data.Text               as T
+import           Data.Word               (Word32)
+import           Linear.Affine           (Point (..))
+import           Linear.V2
 import           Linear.V4
 import           System.IO
-import Data.Word (Word32)
 
-import qualified Graphics.UI.SDL.TTF    as TTF
-import           SDL                    (($=))
+import qualified Graphics.UI.SDL.TTF     as TTF
+import           Graphics.UI.SDL.TTF.FFI (TTFFont)
+import           SDL                     (($=))
 import qualified SDL
+import           SDL.Raw                 (Color (..))
 
 type Time = Word32
 
 data ProtoConfig = ProtoConfig
-  { graphFPS :: Int
+  { graphFPS   :: Int
+  -- Resource
+  , renderer   :: SDL.Renderer
+  , systemFont :: TTFFont
   }
 
 data ProtoState = ProtoState
-  { psClosed :: !Bool
+  { psClosed          :: !Bool
   , graphFlushedCount :: !Int
-  , graphFlushedTime :: !Time
+  , graphFlushedTime  :: !Time
   --
-  , debugShowFPS :: Bool
+  , debugShowFPS      :: !Bool
+  , actualFPS         :: !Int
   } deriving Show
-
-defaultConfig :: ProtoConfig
-defaultConfig = ProtoConfig
-  { graphFPS = 60
-  }
 
 initialState :: ProtoState
 initialState = ProtoState
@@ -43,29 +47,32 @@ initialState = ProtoState
   , graphFlushedTime = 0
   --
   , debugShowFPS = False
+  , actualFPS = 0
   }
 
 newtype ProtoT a = Proto {
     runP :: ReaderT ProtoConfig (StateT ProtoState IO) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
-runProtonic :: ProtoT a -> IO (a, ProtoState)
-runProtonic k =
-  runStateT (runReaderT (runP k) defaultConfig) state
-  where
-    state = initialState
-      { debugShowFPS = True
-      }
+runProtonic :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
+runProtonic conf state k =
+  runStateT (runReaderT (runP k) conf) state
 
 withProtonic :: IO ()
 withProtonic =
   withSDL $
     TTF.withInit $
-      withRenderer $ \r -> do
-        runProtonic (mainLoop r)
-        return ()
+      bracket (TTF.openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
+        withRenderer $ \r -> do
+          let conf = ProtoConfig 60 r font
+          runProtonic conf state (mainLoop r)
+          return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
+    --
+    state = initialState
+      { debugShowFPS = True
+      }
 
 mainLoop :: SDL.Renderer -> ProtoT ()
 mainLoop r =
@@ -75,9 +82,11 @@ mainLoop r =
       --
       procEvents
       render r
+      updateFPS
+      printFPS
+      SDL.present r
       --
       t' <- wait t
-      countFPS
       --
       quit <- gets psClosed
       unless quit (go t')
@@ -93,19 +102,37 @@ mainLoop r =
         SDL.delay $ fromIntegral $ tFPS - dt
       SDL.ticks
 
-    countFPS :: ProtoT ()
-    countFPS = do
+    updateFPS :: ProtoT ()
+    updateFPS = do
       modify (\s -> let c = graphFlushedCount s in s {graphFlushedCount = c + 1})
       curT <- SDL.ticks
       preT <- gets graphFlushedTime
       when (curT - preT > 1000) $ do
-        -- draw FPS
-        actualFPS <- gets graphFlushedCount
-        showFPS <- gets debugShowFPS
-        when showFPS $
-          liftIO . putStrLn $ "FPS: " ++ show actualFPS -- TODO: Draw on screen
+        fps <- gets graphFlushedCount
+        modify (\s -> s {actualFPS = fps})
         modify (\s -> s {graphFlushedTime = curT})
         modify (\s -> s {graphFlushedCount = 0})
+
+    printFPS :: ProtoT ()
+    printFPS = do
+      showFPS <- gets debugShowFPS
+      when showFPS $
+        systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
+
+systemText :: Integral a => V2 a -> String -> ProtoT ()
+systemText pos str = do
+  font <- asks systemFont
+  r <- asks renderer
+  liftIO $ do
+    (w,h) <- TTF.sizeText font str
+    runManaged $ do
+      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 255 255 255 255)) SDL.freeSurface
+      texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
+      let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
+      SDL.copy r texture Nothing rect
+  where
+    mkSurface p = SDL.Surface p Nothing
+    pos' = fromIntegral <$> pos
 
 withRenderer :: (SDL.Renderer -> IO a) -> IO a
 withRenderer work = withW $ withR work
@@ -125,9 +152,8 @@ procEvents = SDL.mapEvents (work . SDL.eventPayload)
 
 render :: SDL.Renderer -> ProtoT ()
 render r = do
-  SDL.rendererDrawColor r $= V4 255 255 0 255
+  SDL.rendererDrawColor r $= V4 0 0 0 255
   SDL.clear r
   --
   -- Rendering
   --
-  SDL.present r

@@ -3,6 +3,7 @@
 module Protonic where
 
 import Control.Monad (unless, void, forever)
+import Control.Concurrent (forkIO)
 import           Control.Exception      (bracket, bracket_)
 import           Control.Monad.IO.Class (MonadIO)
 import           Control.Monad.Reader
@@ -66,30 +67,31 @@ mainLoop r =
       --
       procEvents
       --
-      fps <- asks graphFPS
-      t' <- SDL.ticks
-      wait fps t t'
+      t' <- join $ wait t <$> SDL.ticks <*> asks graphFPS
       render r
       countFPS
       --
       quit <- gets psClosed
       unless quit (go t')
 
-    wait fps t t'
-      | waitMill > 0 = SDL.delay waitMill
-      | otherwise    = return ()
+    wait :: MonadIO m => Time -> Time -> Int -> m Time
+    wait t t' fps = do
+      when (tFPS > dt) $ SDL.delay waitMill
+      return $ t + tFPS
       where
-        diff = truncate $ 1000 / fromIntegral fps
-        waitMill = diff - (t' - t)
+        tFPS = truncate $ 1000 / fromIntegral fps
+        dt = t' - t
+        waitMill = fromIntegral $ tFPS - dt
 
+    countFPS :: ProtoT ()
     countFPS = do
       modify (\s -> let c = graphFlushedCount s in s {graphFlushedCount = c + 1})
       curT <- SDL.ticks
       preT <- gets graphFlushedTime
-      let diffT = curT - preT
       when (curT - preT > 1000) $ do
         -- draw FPS
-        liftIO . print =<< gets graphFlushedCount
+        actualFPS <- gets graphFlushedCount
+        liftIO . putStrLn $ "FPS: " ++ show actualFPS -- TODO: Draw on screen
         modify (\s -> s {graphFlushedTime = curT})
         modify (\s -> s {graphFlushedCount = 0})
 

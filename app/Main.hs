@@ -12,4 +12,4 @@ main = runProtonic render
 render :: ProtoT ()
 render = do
   P.clearBy $ V4 0 0 0 255
-  P.testText (V2 100 (100::Int)) "protonic"
+  P.testText (V2 100 (100::Int)) (V4 255 255 255 255) "protonic"

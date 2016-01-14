@@ -3,6 +3,7 @@ module Protonic.Render where
 import           Control.Exception       (bracket)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
+import           Data.Word               (Word8)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4
@@ -21,17 +22,17 @@ clearBy color = do
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
 
-testText :: Integral a => V2 a -> String -> ProtoT ()
-testText pos str = do
+testText :: Integral a => V2 a -> V4 Word8 -> String -> ProtoT ()
+testText pos (V4 r g b a) str = do
   font <- asks systemFont
-  r <- asks renderer
+  rndr <- asks renderer
   liftIO $ do
     (w,h) <- TTF.sizeText font str
     runManaged $ do
-      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 0 255 0 255)) SDL.freeSurface
-      texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
+      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color r g b a)) SDL.freeSurface
+      texture <- managed $ bracket (SDL.createTextureFromSurface rndr surface) SDL.destroyTexture
       let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
-      SDL.copy r texture Nothing rect
+      SDL.copy rndr texture Nothing rect
   where
     mkSurface p = SDL.Surface p Nothing
     pos' = fromIntegral <$> pos

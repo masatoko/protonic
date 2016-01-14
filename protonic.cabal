@@ -20,6 +20,7 @@ library
   exposed-modules:     Protonic
   other-modules:       Protonic.Core
                      , Protonic.Render
+                     , Protonic.Sprite
   -- other-extensions:
   pkgconfig-depends:   sdl2 >= 2
                      , SDL2_ttf >= 2

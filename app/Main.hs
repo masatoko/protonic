@@ -5,6 +5,7 @@ import           SDL       (($=))
 import qualified SDL
 
 import           Protonic  (runProtonic)
+import qualified Protonic as P
 
 main :: IO ()
 main = runProtonic render

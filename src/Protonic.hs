@@ -2,7 +2,7 @@
 
 module Protonic where
 
-import           Control.Exception       (bracket, bracket_)
+import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad           (unless)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
@@ -11,10 +11,10 @@ import qualified Data.Text               as T
 import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
+import           System.Directory        (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
--- import           SDL                     (($=))
 import qualified SDL
 import           SDL.Raw                 (Color (..))
 
@@ -58,7 +58,7 @@ runProtonic :: (SDL.Renderer -> IO ()) -> IO ()
 runProtonic renderFunc =
   withSDL $
     TTF.withInit $
-      bracket (TTF.openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
+      bracket (openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
           runProtoT conf stt (mainLoop r renderFunc)
@@ -127,6 +127,12 @@ systemText pos str = do
   where
     mkSurface p = SDL.Surface p Nothing
     pos' = fromIntegral <$> pos
+
+openFont :: String -> Int -> IO TTFFont
+openFont str size = do
+  p <- doesFileExist str
+  unless p $ throwIO $ userError $ "Missing font file: " ++ str
+  TTF.openFont str size
 
 withRenderer :: (SDL.Renderer -> IO a) -> IO a
 withRenderer work = withW $ withR work

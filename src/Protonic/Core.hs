@@ -3,7 +3,6 @@
 module Protonic.Core where
 
 import           Control.Exception       (bracket, bracket_, throwIO)
-import           Control.Monad           (unless)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
@@ -58,7 +57,7 @@ runProtonic :: ProtoT () -> IO ()
 runProtonic render =
   withSDL $
     TTF.withInit $
-      bracket (openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
+      bracket (openFont "data/font/system.ttf" 12) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
           _ <- runProtoT conf stt (mainLoop r render)

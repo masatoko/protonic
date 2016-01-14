@@ -24,6 +24,7 @@ library
                      , SDL2_ttf >= 2
   build-depends:       base >=4.8 && <4.9
                      , transformers
+                     , mtl
                      , text
                      , linear
                      , sdl2 >= 2

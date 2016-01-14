@@ -3,4 +3,4 @@ module Main where
 import Protonic
 
 main :: IO ()
-main = runProto
+main = withProtonic

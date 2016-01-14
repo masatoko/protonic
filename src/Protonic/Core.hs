@@ -32,6 +32,7 @@ data ProtoState = ProtoState
   { psClosed          :: !Bool
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
+  , frameCount :: !Integer
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -41,6 +42,7 @@ initialState = ProtoState
   { psClosed = False
   , graphFlushedCount = 0
   , graphFlushedTime = 0
+  , frameCount = 0
   --
   , actualFPS = 0
   }
@@ -81,6 +83,7 @@ mainLoop r render =
       --
       t' <- wait t
       --
+      advance
       quit <- gets psClosed
       unless quit (go t')
 
@@ -111,6 +114,12 @@ mainLoop r render =
       showFPS <- asks dbgPrintFPS
       when showFPS $
         systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
+
+    advance :: ProtoT ()
+    advance = modify (\s -> let f = frameCount s in s {frameCount = f + 1})
+
+frame :: ProtoT Integer
+frame = gets frameCount
 
 systemText :: V2 Int -> String -> ProtoT ()
 systemText pos str = do

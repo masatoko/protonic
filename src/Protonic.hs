@@ -2,8 +2,7 @@
 
 module Protonic where
 
-import Control.Monad (unless)
-import           Control.Concurrent     (threadDelay)
+import Control.Monad (unless, void, forever)
 import           Control.Exception      (bracket, bracket_)
 import           Control.Monad.IO.Class (MonadIO)
 import           Control.Monad.Reader
@@ -11,19 +10,34 @@ import           Control.Monad.State
 import qualified Data.Text              as T
 import           Linear.V4
 import           System.IO
+import Data.Word (Word32)
 
 import qualified Graphics.UI.SDL.TTF    as TTF
 import           SDL                    (($=))
 import qualified SDL
 
+type Time = Word32
+
 data ProtoConfig = ProtoConfig
+  { graphFPS :: Int
+  }
+
 data ProtoState = ProtoState
   { psClosed :: !Bool
+  , graphFlushedCount :: !Int
+  , graphFlushedTime :: !Time
   } deriving Show
+
+defaultConfig :: ProtoConfig
+defaultConfig = ProtoConfig
+  { graphFPS = 60
+  }
 
 initialState :: ProtoState
 initialState = ProtoState
   { psClosed = False
+  , graphFlushedCount = 0
+  , graphFlushedTime = 0
   }
 
 newtype ProtoT a = Proto {
@@ -31,29 +45,53 @@ newtype ProtoT a = Proto {
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
 runProtonic :: ProtoT a -> IO (a, ProtoState)
-runProtonic k = runStateT (runReaderT (runP k) config) initialState
-  where
-    config = ProtoConfig
+runProtonic k =
+  runStateT (runReaderT (runP k) defaultConfig) initialState
 
 withProtonic :: IO ()
 withProtonic =
   withSDL $
     TTF.withInit $
       withRenderer $ \r -> do
-        runProtonic (loop r)
+        runProtonic (mainLoop r)
         return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
-    --
-    loop :: SDL.Renderer -> ProtoT ()
-    loop r = do
-      liftIO $ threadDelay 100
+
+mainLoop :: SDL.Renderer -> ProtoT ()
+mainLoop r =
+  go =<< SDL.ticks
+  where
+    go t = do
       --
       procEvents
+      --
+      fps <- asks graphFPS
+      t' <- SDL.ticks
+      wait fps t t'
       render r
+      countFPS
       --
       quit <- gets psClosed
-      unless quit (loop r)
+      unless quit (go t')
+
+    wait fps t t'
+      | waitMill > 0 = SDL.delay waitMill
+      | otherwise    = return ()
+      where
+        diff = truncate $ 1000 / fromIntegral fps
+        waitMill = diff - (t' - t)
+
+    countFPS = do
+      modify (\s -> let c = graphFlushedCount s in s {graphFlushedCount = c + 1})
+      curT <- SDL.ticks
+      preT <- gets graphFlushedTime
+      let diffT = curT - preT
+      when (curT - preT > 1000) $ do
+        -- draw FPS
+        liftIO . print =<< gets graphFlushedCount
+        modify (\s -> s {graphFlushedTime = curT})
+        modify (\s -> s {graphFlushedCount = 0})
 
 withRenderer :: (SDL.Renderer -> IO a) -> IO a
 withRenderer work = withW $ withR work

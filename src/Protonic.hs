@@ -137,11 +137,16 @@ openFont str size = do
 withRenderer :: (SDL.Renderer -> IO a) -> IO a
 withRenderer work = withW $ withR work
   where
-    withW = bracket (SDL.createWindow (T.pack "protonic") SDL.defaultWindow)
+    withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
                     SDL.destroyWindow
     withR f win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
                           SDL.destroyRenderer
                           f
+    winConf = SDL.defaultWindow
+      { SDL.windowMode = SDL.Windowed
+      , SDL.windowResizable = False
+      , SDL.windowInitialSize = V2 640 480
+      }
 
 procEvents :: ProtoT ()
 procEvents = SDL.mapEvents (work . SDL.eventPayload)

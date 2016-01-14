@@ -54,18 +54,18 @@ newtype ProtoT a = Proto {
     runP :: ReaderT ProtoConfig (StateT ProtoState IO) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
 
-runProtonic :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
-runProtonic conf state k =
+runProtoT :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
+runProtoT conf state k =
   runStateT (runReaderT (runP k) conf) state
 
-withProtonic :: IO ()
-withProtonic =
+runProtonic :: IO ()
+runProtonic =
   withSDL $
     TTF.withInit $
       bracket (TTF.openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
-          runProtonic conf state (mainLoop r)
+          runProtoT conf state (mainLoop r)
           return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit

@@ -23,17 +23,18 @@ clearBy color = do
   SDL.clear r
 
 renderS :: Sprite -> V2 Int -> Maybe Double -> ProtoT ()
-renderS (Sprite tex size) pos mDeg = do
-  r <- asks renderer
-  case mDeg of
-    Just deg -> do
-      let deg' = realToFrac deg
-          pRot = Just $ P $ (`div` 2) <$> size
-      SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
-    Nothing -> SDL.copy r tex Nothing dest
+renderS (Sprite tex size) pos mDeg =
+  copy mDeg =<< asks renderer
   where
     pos' = fromIntegral <$> pos
     dest = Just $ SDL.Rectangle (P pos') size
+    --
+    copy (Just deg) r =
+      SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
+      where
+        deg' = realToFrac deg
+        pRot = Just $ P $ (`div` 2) <$> size
+    copy Nothing r = SDL.copy r tex Nothing dest
 
 testText :: V2 Int -> V4 Word8 -> String -> ProtoT ()
 testText pos (V4 r g b a) str = do

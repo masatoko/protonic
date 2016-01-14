@@ -29,6 +29,8 @@ data ProtoConfig = ProtoConfig
   -- Resource
   , renderer   :: SDL.Renderer
   , systemFont :: TTFFont
+  -- Debug
+  , dbgPrintFPS :: Bool
   }
 
 data ProtoState = ProtoState
@@ -36,7 +38,6 @@ data ProtoState = ProtoState
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   --
-  , debugShowFPS      :: !Bool
   , actualFPS         :: !Int
   } deriving Show
 
@@ -46,7 +47,6 @@ initialState = ProtoState
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   --
-  , debugShowFPS = False
   , actualFPS = 0
   }
 
@@ -64,15 +64,13 @@ withProtonic =
     TTF.withInit $
       bracket (TTF.openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
-          let conf = ProtoConfig 60 r font
+          let conf = ProtoConfig 60 r font True
           runProtonic conf state (mainLoop r)
           return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
     --
     state = initialState
-      { debugShowFPS = True
-      }
 
 mainLoop :: SDL.Renderer -> ProtoT ()
 mainLoop r =
@@ -115,7 +113,7 @@ mainLoop r =
 
     printFPS :: ProtoT ()
     printFPS = do
-      showFPS <- gets debugShowFPS
+      showFPS <- asks dbgPrintFPS
       when showFPS $
         systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
 

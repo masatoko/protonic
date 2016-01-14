@@ -25,4 +25,4 @@ render (App sprite) = do
   let size = abs $ sin $ fromIntegral t / (60 :: Double)
   P.clearBy $ V4 0 0 0 255
   P.testText (V2 100 100) (V4 255 255 255 255) $ show (size :: Double)
-  P.renderS sprite (V2 100 200)
+  P.renderS sprite (V2 100 200) (Just 90)

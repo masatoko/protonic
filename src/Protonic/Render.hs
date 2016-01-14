@@ -22,10 +22,15 @@ clearBy color = do
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
 
-renderS :: Sprite -> V2 Int -> ProtoT ()
-renderS (Sprite tex size) pos = do
+renderS :: Sprite -> V2 Int -> Maybe Double -> ProtoT ()
+renderS (Sprite tex size) pos mDeg = do
   r <- asks renderer
-  SDL.copy r tex Nothing dest
+  case mDeg of
+    Just deg -> do
+      let deg' = realToFrac deg
+          pRot = Just $ P $ (`div` 2) <$> size
+      SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
+    Nothing -> SDL.copy r tex Nothing dest
   where
     pos' = fromIntegral <$> pos
     dest = Just $ SDL.Rectangle (P pos') size

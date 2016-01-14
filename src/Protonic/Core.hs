@@ -25,7 +25,7 @@ data ProtoConfig = ProtoConfig
   , renderer   :: SDL.Renderer
   , systemFont :: TTFFont
   -- Debug
-  , dbgPrintFPS :: Bool
+  , debugPrintSystem :: Bool
   }
 
 data ProtoState = ProtoState
@@ -123,9 +123,10 @@ mainLoop r render =
 
     printFPS :: ProtoT ()
     printFPS = do
-      showFPS <- asks dbgPrintFPS
-      when showFPS $
+      p <- asks debugPrintSystem
+      when p $ do
         systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
+        systemText (V2 0 16) =<< (("Frame:" ++) . show) <$> gets frameCount
 
     advance :: ProtoT ()
     advance = modify (\s -> let f = frameCount s in s {frameCount = f + 1})

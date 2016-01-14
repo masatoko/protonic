@@ -19,6 +19,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Protonic
   other-modules:       Protonic.Core
+                     , Protonic.Data
                      , Protonic.Render
                      , Protonic.Sprite
   -- other-extensions:

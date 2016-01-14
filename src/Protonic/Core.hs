@@ -24,6 +24,7 @@ data ProtoConfig = ProtoConfig
   -- Resource
   , renderer         :: SDL.Renderer
   , systemFont       :: TTFFont
+  , fontPath         :: String
   -- Debug
   , debugPrintSystem :: Bool
   }
@@ -59,13 +60,21 @@ runProtonic :: ProtoT () -> IO ()
 runProtonic render =
   bracket_ SDL.initializeAll SDL.quit $
     TTF.withInit $
-      bracket (openFont "data/font/system.ttf" 16) TTF.closeFont $ \font ->
-        withRenderer $ \r -> do
-          let conf = ProtoConfig 60 r font True
-          _ <- runProtoT conf stt (mainLoop r render)
+      withRenderer $ \r ->
+        withConf r $ \conf -> do
+          _ <- runProtoT conf initialState (mainLoop r render)
           return ()
   where
-    stt = initialState
+    withConf r work = do
+      let path = "data/font/system.ttf"
+      bracket (openFont path 16) TTF.closeFont $ \font ->
+        work ProtoConfig
+              { graphFPS = 60
+              , renderer = r
+              , systemFont = font
+              , fontPath = path
+              , debugPrintSystem = True
+              }
     --
     withRenderer :: (SDL.Renderer -> IO a) -> IO a
     withRenderer work = withW $ withR work
@@ -91,7 +100,7 @@ mainLoop r render =
       render
       updateFPS
       printFPS
-      SDL.present r
+      SDL.present =<< asks renderer
       --
       t' <- wait t
       --

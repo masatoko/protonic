@@ -1,6 +1,11 @@
 module Protonic
   (
-    runProtonic
+    ProtoT
+  , runProtonic
+  -- Render
+  , clearBy
+  , testText
   ) where
 
-import Protonic.Core (runProtonic)
+import Protonic.Core (ProtoT, runProtonic)
+import Protonic.Render (clearBy, testText)

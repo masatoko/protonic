@@ -1,16 +1,15 @@
 module Main where
 
+import           Linear.V2
 import           Linear.V4
-import           SDL       (($=))
-import qualified SDL
 
-import           Protonic  (runProtonic)
+import           Protonic  (ProtoT, runProtonic)
 import qualified Protonic as P
 
 main :: IO ()
 main = runProtonic render
 
-render :: SDL.Renderer -> IO ()
-render r = do
-  SDL.rendererDrawColor r $= V4 0 0 0 255
-  SDL.clear r
+render :: ProtoT ()
+render = do
+  P.clearBy $ V4 0 0 0 255
+  P.testText (V2 100 (100::Int)) "protonic"

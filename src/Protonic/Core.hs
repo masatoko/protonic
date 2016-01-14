@@ -54,28 +54,28 @@ runProtoT :: ProtoConfig -> ProtoState -> ProtoT a -> IO (a, ProtoState)
 runProtoT conf stt k =
   runStateT (runReaderT (runP k) conf) stt
 
-runProtonic :: (SDL.Renderer -> IO ()) -> IO ()
-runProtonic renderFunc =
+runProtonic :: ProtoT () -> IO ()
+runProtonic render =
   withSDL $
     TTF.withInit $
       bracket (openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
-          runProtoT conf stt (mainLoop r renderFunc)
+          runProtoT conf stt (mainLoop r render)
           return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit
     --
     stt = initialState
 
-mainLoop :: SDL.Renderer -> (SDL.Renderer -> IO ()) -> ProtoT ()
-mainLoop r renderFunc =
+mainLoop :: SDL.Renderer -> ProtoT () -> ProtoT ()
+mainLoop r render =
   go =<< SDL.ticks
   where
     go t = do
       --
       procEvents
-      liftIO $ renderFunc r
+      render
       updateFPS
       printFPS
       SDL.present r

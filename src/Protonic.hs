@@ -66,22 +66,23 @@ mainLoop r =
     go t = do
       --
       procEvents
-      --
-      t' <- join $ wait t <$> SDL.ticks <*> asks graphFPS
       render r
+      --
+      t' <- wait t
       countFPS
       --
       quit <- gets psClosed
       unless quit (go t')
 
-    wait :: MonadIO m => Time -> Time -> Int -> m Time
-    wait t t' fps = do
-      when (tFPS > dt) $ SDL.delay waitMill
-      return $ t + tFPS
-      where
-        tFPS = truncate $ 1000 / fromIntegral fps
-        dt = t' - t
-        waitMill = fromIntegral $ tFPS - dt
+    wait :: Time -> ProtoT Time
+    wait t = do
+      t' <- SDL.ticks
+      fps <- asks graphFPS
+      let tFPS = truncate $ 1000 / fromIntegral fps
+          dt = if t' < t then 0 else t' - t
+      when (tFPS > dt) $
+        SDL.delay $ fromIntegral $ tFPS - dt
+      SDL.ticks
 
     countFPS :: ProtoT ()
     countFPS = do

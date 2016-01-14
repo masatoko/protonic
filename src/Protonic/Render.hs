@@ -14,12 +14,21 @@ import qualified SDL
 import           SDL.Raw                 (Color (..))
 
 import           Protonic.Core
+import Protonic.Data (Sprite (..))
 
 clearBy :: V4 Int -> ProtoT ()
 clearBy color = do
   r <- asks renderer
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
+
+renderS :: Sprite -> V2 Int -> ProtoT ()
+renderS (Sprite tex size) pos = do
+  r <- asks renderer
+  SDL.copy r tex Nothing dest
+  where
+    pos' = fromIntegral <$> pos
+    dest = Just $ SDL.Rectangle (P pos') size
 
 testText :: V2 Int -> V4 Word8 -> String -> ProtoT ()
 testText pos (V4 r g b a) str = do

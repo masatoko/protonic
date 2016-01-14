@@ -6,8 +6,12 @@ module Protonic
   , runGame
   --
   , frame
+  -- Data
+  , Font
+  , Sprite
   -- Render
   , clearBy
+  , renderS
   , testText
   -- Sprite
   , newFont, freeFont
@@ -15,5 +19,6 @@ module Protonic
   ) where
 
 import Protonic.Core (ProtoT, runProtoT, withProtonic, runGame, frame)
-import Protonic.Render (clearBy, testText)
+import Protonic.Data (Font, Sprite)
+import Protonic.Render (clearBy, renderS, testText)
 import Protonic.Sprite (newFont, freeFont, newSprite, freeSprite)

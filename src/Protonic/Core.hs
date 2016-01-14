@@ -10,7 +10,7 @@ import qualified Data.Text               as T
 import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
-import           System.Directory        (doesFileExist)
+-- import           System.Directory        (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
@@ -94,7 +94,7 @@ withProtonic go =
 -- Start game
 runGame :: Proto -> ProtoT () -> IO ()
 runGame proto render = do
-  runProtoT proto (mainLoop render)
+  _ <- runProtoT proto (mainLoop render)
   return ()
 
 mainLoop :: ProtoT () -> ProtoT ()
@@ -167,7 +167,8 @@ systemText pos str = do
 
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do
-  p <- doesFileExist str
+  -- p <- doesFileExist str
+  let p = True
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 

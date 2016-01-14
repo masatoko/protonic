@@ -90,7 +90,7 @@ mainLoop r render =
     wait t = do
       t' <- SDL.ticks
       fps <- asks graphFPS
-      let tFPS = truncate $ 1000 / fromIntegral fps
+      let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
       when (tFPS > dt) $
         SDL.delay $ fromIntegral $ tFPS - dt
@@ -113,7 +113,7 @@ mainLoop r render =
       when showFPS $
         systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
 
-systemText :: Integral a => V2 a -> String -> ProtoT ()
+systemText :: V2 Int -> String -> ProtoT ()
 systemText pos str = do
   font <- asks systemFont
   r <- asks renderer

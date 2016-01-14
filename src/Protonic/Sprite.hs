@@ -21,6 +21,7 @@ freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =
   liftIO $ TTF.closeFont font
 
+-- TODO: Change color
 newSprite :: Font -> String -> ProtoT Sprite
 newSprite (Font font) str = do
   rndr <- asks renderer

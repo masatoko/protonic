@@ -9,7 +9,6 @@ import           Linear.V2
 import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF     as TTF
-import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import           SDL                     (($=))
 import qualified SDL
 import           SDL.Raw                 (Color (..))

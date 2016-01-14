@@ -61,7 +61,7 @@ runProtonic render =
       bracket (openFont "data/font/system.ttf" 18) TTF.closeFont $ \font ->
         withRenderer $ \r -> do
           let conf = ProtoConfig 60 r font True
-          runProtoT conf stt (mainLoop r render)
+          _ <- runProtoT conf stt (mainLoop r render)
           return ()
   where
     withSDL = bracket_ SDL.initializeAll SDL.quit

@@ -92,12 +92,12 @@ withProtonic go =
           }
 
 -- Start game
-runGame :: Proto -> a -> (a -> ProtoT a) -> ProtoT () -> IO ()
+runGame :: Proto -> a -> (a -> ProtoT a) -> (a -> ProtoT ()) -> IO ()
 runGame proto app update render = do
   _ <- runProtoT proto (mainLoop app update render)
   return ()
 
-mainLoop :: a -> (a -> ProtoT a) -> ProtoT () -> ProtoT ()
+mainLoop :: a -> (a -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
 mainLoop app update render =
   go app =<< SDL.ticks
   where
@@ -105,7 +105,7 @@ mainLoop app update render =
       --
       procEvents
       a' <- update a
-      render
+      render a'
       updateFPS
       printFPS
       SDL.present =<< asks renderer

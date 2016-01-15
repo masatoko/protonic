@@ -4,33 +4,40 @@ import           Control.Monad.State
 import           Linear.V2
 import           Linear.V4
 
-import           Protonic  (ProtoT, runProtoT, withProtonic, runGame)
-import qualified Protonic as P
+import           Protonic            (ProtoT, runGame, runProtoT, withProtonic)
+import qualified Protonic            as P
 
-data App = App P.Sprite
+data App = App
+  { appState  :: Int
+  , appSprite :: P.Sprite
+  }
 
 main :: IO ()
 main =
   withProtonic $ \proto -> do
     (app,_) <- runProtoT proto initializeApp
-    runGame proto app update (render app)
+    runGame proto app update render
   where
     initializeApp :: ProtoT App
     initializeApp = do
       font <- P.newFont 20
-      App <$> P.newSprite font "@"
+      App 0 <$> P.newSprite font "@"
 
 update :: App -> ProtoT App
 update app = snd <$> runStateT go app
   where
     go :: StateT App ProtoT ()
-    go = return ()
+    go = do
+      t <- fromIntegral <$> lift P.frame
+      when (t `mod` 10 == 0) $
+        modify (\a -> a {appState = t})
 
 render :: App -> ProtoT ()
-render (App sprite) = do
+render (App stt sprite) = do
   t <- P.frame
   let deg = (*360) $ abs $ sin $ fromIntegral t / (60 :: Double)
   P.clearBy $ V4 0 0 0 255
+  P.testText (V2 200 50) (V4 255 255 255 255) $ show stt
   P.testText (V2 100 100) (V4 255 255 255 255) $ show (deg :: Double)
   P.renderS sprite (V2 100 200) (Just deg)
   mapM_ (work . (\i -> deg + (i * 60))) [0..6]

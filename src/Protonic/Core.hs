@@ -17,6 +17,15 @@ import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import qualified SDL
 import           SDL.Raw                 (Color (..))
 
+data Config = Config
+  { winSize :: V2 Int
+  }
+
+defaultConfig :: Config
+defaultConfig = Config
+  { winSize = V2 640 480
+  }
+
 type Time = Word32
 
 data ProtoConfig = ProtoConfig
@@ -57,11 +66,11 @@ newtype ProtoT a = ProtoT {
 runProtoT :: Proto -> ProtoT a -> IO (a, ProtoState)
 runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
 
-withProtonic :: (Proto -> IO ()) -> IO ()
-withProtonic go =
+withProtonic :: Config -> (Proto -> IO ()) -> IO ()
+withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $
     TTF.withInit $
-      withRenderer $ \r ->
+      withRenderer config $ \r ->
         withConf r $ \conf -> do
           let proto = Proto conf initialState
           go proto
@@ -77,8 +86,8 @@ withProtonic go =
               , debugPrintSystem = True
               }
     --
-    withRenderer :: (SDL.Renderer -> IO a) -> IO a
-    withRenderer work = withW $ withR work
+    withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
+    withRenderer conf work = withW $ withR work
       where
         withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
                         SDL.destroyWindow
@@ -88,8 +97,9 @@ withProtonic go =
         winConf = SDL.defaultWindow
           { SDL.windowMode = SDL.Windowed
           , SDL.windowResizable = False
-          , SDL.windowInitialSize = V2 300 300
+          , SDL.windowInitialSize = fromIntegral <$> winSize conf
           }
+
 
 -- Start game
 runGame :: Proto -> a -> (a -> ProtoT a) -> (a -> ProtoT ()) -> IO ()

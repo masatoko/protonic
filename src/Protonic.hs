@@ -4,6 +4,8 @@ module Protonic
   , runProtoT
   , withProtonic
   , runGame
+  , Config (..)
+  , defaultConfig
   --
   , frame
   -- Data
@@ -18,7 +20,8 @@ module Protonic
   , newSprite, freeSprite
   ) where
 
-import Protonic.Core (ProtoT, runProtoT, withProtonic, runGame, frame)
-import Protonic.Data (Font, Sprite)
-import Protonic.Render (clearBy, renderS, testText)
-import Protonic.Sprite (newFont, freeFont, newSprite, freeSprite)
+import           Protonic.Core   (Config (..), ProtoT, defaultConfig, frame,
+                                  runGame, runProtoT, withProtonic)
+import           Protonic.Data   (Font, Sprite)
+import           Protonic.Render (clearBy, renderS, testText)
+import           Protonic.Sprite (freeFont, freeSprite, newFont, newSprite)

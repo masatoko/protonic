@@ -18,11 +18,13 @@ data App = App
 
 main :: IO ()
 main =
-  withProtonic $ \proto ->
+  withProtonic conf $ \proto ->
     runManaged $ do
       app <- managed $ bracket (fst <$> runProtoT proto initializeApp) freeApp
       liftIO $ runGame proto app update render
   where
+    conf = P.defaultConfig {P.winSize = V2 300 300}
+    --
     initializeApp :: ProtoT App
     initializeApp = do
       font <- P.newFont 100

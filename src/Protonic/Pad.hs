@@ -7,12 +7,12 @@ module Protonic.Pad
 , makeActionsFrom
 ) where
 
+import           Data.Int        (Int32)
 import           Data.List       (nub)
 import qualified Data.Map.Strict as M
 import           Data.Maybe      (fromMaybe)
-import Linear.V2
-import Linear.Affine (Point (..))
-import Data.Int (Int32)
+import           Linear.Affine   (Point (..))
+import           Linear.V2
 
 import qualified SDL
 

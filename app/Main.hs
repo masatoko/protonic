@@ -1,26 +1,26 @@
 module Main where
 
-import           Control.Exception     (bracket)
+import           Control.Exception   (bracket)
+import           Control.Lens
 import           Control.Monad.State
-import           Data.Int (Int32)
+import           Data.Int            (Int32)
 import           Linear.V2
 import           Linear.V4
-import           Control.Lens
 
 import qualified SDL
 
-import           Protonic              (ProtoT, runGame, runProtoT,
-                                        withProtonic, Pad, KeyInput (..), Pointer (..), mkPad)
-import qualified Protonic              as P
-import qualified Protonic.Data         as D
+import           Protonic            (KeyInput (..), Pad, Pointer (..), ProtoT,
+                                      mkPad, runGame, runProtoT, withProtonic)
+import qualified Protonic            as P
+import qualified Protonic.Data       as D
 
 data App = App
   {
-    appPos :: V2 Int
+    appPos    :: V2 Int
   , appAtmark :: P.Sprite
   --
-  , appDeg  :: Double
-  , appStar :: P.Sprite
+  , appDeg    :: Double
+  , appStar   :: P.Sprite
   }
 
 data Action
@@ -88,7 +88,7 @@ update app as = snd <$> runStateT go app
         work _     = id
 
     printPos (PointAt p) = liftIO . print $ p
-    printPos _         = return ()
+    printPos _           = return ()
 
 render :: App -> ProtoT ()
 render app = do

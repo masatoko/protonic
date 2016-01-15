@@ -36,12 +36,14 @@ data ProtoConfig = ProtoConfig
   , renderer         :: SDL.Renderer
   , systemFont       :: TTFFont
   , fontPath         :: String
+  , fontSize         :: Int
   -- Debug
   , debugPrintSystem :: Bool
   }
 
 data ProtoState = ProtoState
   { psClosed          :: !Bool
+  , cursorRow         :: !Int
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   , frameCount        :: !Integer
@@ -54,6 +56,7 @@ data Proto = Proto ProtoConfig ProtoState
 initialState :: ProtoState
 initialState = ProtoState
   { psClosed = False
+  , cursorRow = 0
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   , frameCount = 0
@@ -79,12 +82,14 @@ withProtonic config go =
   where
     withConf r work = do
       let path = "data/font/system.ttf"
-      bracket (openFont path 16) TTF.closeFont $ \font ->
+          size = 16
+      bracket (openFont path size) TTF.closeFont $ \font ->
         work ProtoConfig
               { graphFPS = 60
               , renderer = r
               , systemFont = font
               , fontPath = path
+              , fontSize = size
               , debugPrintSystem = True
               }
     --
@@ -156,29 +161,35 @@ mainLoop iniApp pad update render =
     printFPS = do
       p <- asks debugPrintSystem
       when p $ do
-        systemText (V2 0 0) =<< (("FPS:" ++) . show) <$> gets actualFPS
-        systemText (V2 0 16) =<< (("Frame:" ++) . show) <$> gets frameCount
+        printSys =<< (("FPS:" ++) . show) <$> gets actualFPS
+        printSys =<< (("Frame:" ++) . show) <$> gets frameCount
 
     advance :: ProtoT ()
-    advance = modify (\s -> let f = frameCount s in s {frameCount = f + 1})
+    advance = modify $ \s -> let
+      f = frameCount s
+      in s { frameCount = f + 1
+           , cursorRow = 0
+           }
 
 frame :: ProtoT Integer
 frame = gets frameCount
 
-systemText :: V2 Int -> String -> ProtoT ()
-systemText pos str = do
+printSys :: String -> ProtoT ()
+printSys str = do
   font <- asks systemFont
   r <- asks renderer
+  pos <- mkPos <$> gets cursorRow <*> asks fontSize
+  modify (\s -> let i = cursorRow s in s {cursorRow = i + 1})
   liftIO $ do
     (w,h) <- TTF.sizeText font str
     runManaged $ do
       surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 0 255 0 255)) SDL.freeSurface
       texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
-      let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
+      let rect = Just $ SDL.Rectangle (P pos) (fromIntegral <$> V2 w h)
       SDL.copy r texture Nothing rect
   where
     mkSurface p = SDL.Surface p Nothing
-    pos' = fromIntegral <$> pos
+    mkPos row size = fromIntegral <$> V2 0 (row * size)
 
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do

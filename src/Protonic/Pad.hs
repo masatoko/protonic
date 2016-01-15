@@ -1,7 +1,7 @@
 module Protonic.Pad
 (
   Pad
-, Input (..)
+, KeyInput (..)
 , mkPad
 , makeActionsFrom
 ) where
@@ -12,24 +12,21 @@ import           Data.Maybe      (fromMaybe)
 
 import qualified SDL
 
-data Pad a = Pad !(M.Map Input [a])
+data Pad a = Pad !(M.Map KeyInput [a])
 
-data Input
+data KeyInput
   = Key SDL.InputMotion SDL.Keycode
   deriving (Eq, Ord, Show)
 
-mkPad :: [([Input], a)] -> Pad a
-mkPad = Pad . mkmap . concatMap mkpair
+mkPad :: [(KeyInput, a)] -> Pad a
+mkPad = Pad . mkmap
   where
-    mkpair :: ([Input], a) -> [(Input, a)]
-    mkpair (is, a) = zip is $ repeat a
-
     mkmap :: (Eq a, Ord a) => [(a, b)] -> M.Map a [b]
     mkmap xs =
-      M.fromList $ map work as
+      M.fromList $ map mkpair as
       where
         as = nub . map fst $ xs
-        work a =
+        mkpair a =
           let bs = map snd $ filter ((==a) . fst) xs
           in (a, bs)
 

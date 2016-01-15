@@ -1,6 +1,6 @@
 module Main where
 
-import Control.Exception (bracket)
+import           Control.Exception     (bracket)
 import           Control.Monad.Managed (managed, runManaged)
 import           Control.Monad.State
 import           Linear.V2

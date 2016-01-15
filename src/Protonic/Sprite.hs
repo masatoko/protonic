@@ -1,17 +1,17 @@
 module Protonic.Sprite where
 
-import           Control.Exception       (bracket)
+import           Control.Exception    (bracket)
 import           Control.Monad.Reader
+import           Data.Word            (Word8)
 import           Linear.V2
 import           Linear.V4
-import Data.Word (Word8)
 
-import qualified Graphics.UI.SDL.TTF     as TTF
+import qualified Graphics.UI.SDL.TTF  as TTF
 import qualified SDL
-import           SDL.Raw                 (Color (..))
+import           SDL.Raw              (Color (..))
 
-import           Protonic.Data (Font(..), Sprite(..))
 import           Protonic.Core
+import           Protonic.Data        (Font (..), Sprite (..))
 
 -- Make font from TTF (default path)
 newFont :: Int -> ProtoT Font

@@ -26,10 +26,10 @@ mkPad = Pad . mkmap . concatMap mkpair
 
     mkmap :: (Eq a, Ord a) => [(a, b)] -> M.Map a [b]
     mkmap xs =
-      M.fromList $ map mkpair as
+      M.fromList $ map work as
       where
         as = nub . map fst $ xs
-        mkpair a =
+        work a =
           let bs = map snd $ filter ((==a) . fst) xs
           in (a, bs)
 

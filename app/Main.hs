@@ -9,6 +9,7 @@ import           Linear.V4
 import           Protonic              (ProtoT, runGame, runProtoT,
                                         withProtonic)
 import qualified Protonic              as P
+import qualified Protonic.Data         as D
 
 data App = App
   { appState  :: Double
@@ -24,7 +25,7 @@ main =
   where
     initializeApp :: ProtoT App
     initializeApp = do
-      font <- P.newFont 30
+      font <- P.newFont 100
       App 0 <$> P.newSprite font (V4 100 200 255 255) "@"
     --
     freeApp :: App -> IO ()
@@ -36,23 +37,27 @@ update app = snd <$> runStateT go app
     go :: StateT App ProtoT ()
     go = do
       t <- lift P.frame
-      let deg = (*360) $ abs $ sin $ fromIntegral t / (60 :: Double)
+      let deg = fromIntegral $ (t * 8) `mod` 360
       modify (\a -> a {appState = deg})
 
 render :: App -> ProtoT ()
 render (App stt sprite) = do
   P.clearBy $ V4 0 0 0 255
-  P.testText center white $ (\i -> show (i :: Int)) $ truncate stt
-  mapM_ (stamp stt) [0..6]
+  P.testText (V2 20 50) white $ (\i -> show (i :: Int)) $ truncate stt
+  mapM_ (stamp stt) [0..75]
   where
     white = V4 255 255 255 255
-    center = V2 100 150
+    center = V2 150 150
     --
     stamp :: Double -> Int -> ProtoT ()
     stamp base i =
-      P.renderS sprite pos (Just deg)
+      P.renderS sprite pos (Just size) (Just deg)
       where
-        deg = base + fromIntegral i * 60
+        mul = 0.95 ** fromIntegral i :: Double
+        size = (truncate . (* mul) . fromIntegral) <$> D.spsize sprite
+        --
+        r = 250
+        deg = base + fromIntegral i * 23
         rad = pi * deg / 180
-        dp = (truncate . (* 50)) <$> V2 (cos rad) (sin rad)
+        dp = (truncate . (* (r * mul))) <$> V2 (cos rad) (sin rad)
         pos = center + dp

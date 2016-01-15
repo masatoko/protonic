@@ -1,20 +1,22 @@
 module Protonic.Render where
 
-import           Control.Exception       (bracket)
-import           Control.Monad.Managed   (managed, runManaged)
+import           Control.Exception     (bracket)
+import           Control.Monad.Managed (managed, runManaged)
 import           Control.Monad.Reader
-import           Data.Word               (Word8)
-import           Linear.Affine           (Point (..))
+import           Data.Maybe            (fromMaybe)
+import           Data.Word             (Word8)
+import           Foreign.C.Types       (CInt)
+import           Linear.Affine         (Point (..))
 import           Linear.V2
 import           Linear.V4
 
-import qualified Graphics.UI.SDL.TTF     as TTF
-import           SDL                     (($=))
+import qualified Graphics.UI.SDL.TTF   as TTF
+import           SDL                   (($=))
 import qualified SDL
-import           SDL.Raw                 (Color (..))
+import           SDL.Raw               (Color (..))
 
 import           Protonic.Core
-import Protonic.Data (Sprite (..))
+import           Protonic.Data         (Sprite (..))
 
 clearBy :: V4 Int -> ProtoT ()
 clearBy color = do
@@ -22,18 +24,19 @@ clearBy color = do
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
 
-renderS :: Sprite -> V2 Int -> Maybe Double -> ProtoT ()
-renderS (Sprite tex size) pos mDeg =
+renderS :: Sprite -> V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
+renderS (Sprite tex size) pos mSize mDeg =
   copy mDeg =<< asks renderer
   where
     pos' = fromIntegral <$> pos
-    dest = Just $ SDL.Rectangle (P pos') size
+    size' = fromMaybe size mSize
+    dest = Just $ SDL.Rectangle (P pos') size'
     --
     copy (Just deg) r =
       SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
       where
         deg' = realToFrac deg
-        pRot = Just $ P $ (`div` 2) <$> size
+        pRot = Just $ P $ (`div` 2) <$> size'
     copy Nothing r = SDL.copy r tex Nothing dest
 
 testText :: V2 Int -> V4 Word8 -> String -> ProtoT ()

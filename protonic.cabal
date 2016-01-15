@@ -18,8 +18,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Protonic
-  other-modules:       Protonic.Core
                      , Protonic.Data
+  other-modules:       Protonic.Core
                      , Protonic.Render
                      , Protonic.Sprite
   -- other-extensions:

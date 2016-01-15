@@ -10,7 +10,7 @@ import qualified Graphics.UI.SDL.TTF     as TTF
 import qualified SDL
 import           SDL.Raw                 (Color (..))
 
-import           Protonic.Data (Font (..), Sprite (..))
+import           Protonic.Data (Font(..), Sprite(..))
 import           Protonic.Core
 
 -- Make font from TTF (default path)

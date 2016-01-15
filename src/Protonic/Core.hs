@@ -161,8 +161,8 @@ mainLoop iniApp pad update render =
     printFPS = do
       p <- asks debugPrintSystem
       when p $ do
-        printSys =<< (("FPS:" ++) . show) <$> gets actualFPS
-        printSys =<< (("Frame:" ++) . show) <$> gets frameCount
+        printsys =<< (("FPS:" ++) . show) <$> gets actualFPS
+        printsys =<< (("Frame:" ++) . show) <$> gets frameCount
 
     advance :: ProtoT ()
     advance = modify $ \s -> let
@@ -174,8 +174,8 @@ mainLoop iniApp pad update render =
 frame :: ProtoT Integer
 frame = gets frameCount
 
-printSys :: String -> ProtoT ()
-printSys str = do
+printsys :: String -> ProtoT ()
+printsys str = do
   font <- asks systemFont
   r <- asks renderer
   pos <- mkPos <$> gets cursorRow <*> asks fontSize

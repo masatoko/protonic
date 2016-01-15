@@ -94,10 +94,10 @@ render :: App -> ProtoT ()
 render app = do
   P.clearBy $ V4 0 0 0 255
   -- Atmark
-  P.testText (V2 20 34) white $ "Move (WASD) " ++ show markPos
+  P.printsys $ "Move (WASD) " ++ show markPos
   P.renderS atmark markPos Nothing Nothing
   -- Star
-  P.testText (V2 20 50) white $ (\i -> show (i :: Int)) $ truncate baseDeg
+  P.printsys $ (\i -> show (i :: Int)) $ truncate baseDeg
   mapM_ (stamp baseDeg) [0..75]
   where
     markPos = V2 10 20 * appPos app
@@ -105,7 +105,6 @@ render app = do
     baseDeg = appDeg app
     star = appStar app
     --
-    white = V4 255 255 255 255
     center = V2 150 150
     --
     stamp :: Double -> Int -> ProtoT ()

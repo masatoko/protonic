@@ -6,6 +6,7 @@ module Protonic
   , runGame
   , Config (..)
   , defaultConfig
+  , printsys
   --
   , frame
   -- Data
@@ -27,7 +28,7 @@ module Protonic
   ) where
 
 import           Protonic.Core   (Config (..), ProtoT, defaultConfig, frame,
-                                  runGame, runProtoT, withProtonic)
+                                  runGame, runProtoT, withProtonic, printsys)
 import           Protonic.Data   (Font, Sprite)
 import           Protonic.Pad    (KeyInput (..), Pointer (..), Pad, makeActionsFrom, mkPad)
 import           Protonic.Render (clearBy, renderS, testText)

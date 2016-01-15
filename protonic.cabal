@@ -44,6 +44,6 @@ executable proto
                      , protonic
                      , sdl2 >= 2
                      , mtl
-                     , lens
+                     , managed
                      , linear
   default-language:    Haskell2010

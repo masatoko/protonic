@@ -8,7 +8,7 @@ import           Protonic            (ProtoT, runGame, runProtoT, withProtonic)
 import qualified Protonic            as P
 
 data App = App
-  { appState  :: Int
+  { appState  :: Double
   , appSprite :: P.Sprite
   }
 
@@ -28,26 +28,24 @@ update app = snd <$> runStateT go app
   where
     go :: StateT App ProtoT ()
     go = do
-      t <- fromIntegral <$> lift P.frame
-      when (t `mod` 10 == 0) $
-        modify (\a -> a {appState = t})
+      t <- lift P.frame
+      let deg = (*360) $ abs $ sin $ fromIntegral t / (60 :: Double)
+      modify (\a -> a {appState = deg})
 
 render :: App -> ProtoT ()
 render (App stt sprite) = do
-  t <- P.frame
-  let deg = (*360) $ abs $ sin $ fromIntegral t / (60 :: Double)
   P.clearBy $ V4 0 0 0 255
-  P.testText (V2 200 50) (V4 255 255 255 255) $ show stt
-  P.testText (V2 100 100) (V4 255 255 255 255) $ show (deg :: Double)
-  P.renderS sprite (V2 100 200) (Just deg)
-  mapM_ (work . (\i -> deg + (i * 60))) [0..6]
+  P.testText (V2 100 50) white $ show stt
+  mapM_ (stamp stt) [0..6]
   where
-    work :: Double -> ProtoT ()
-    work deg =
-      P.renderS sprite (V2 x y) (Just deg)
+    white = V4 255 255 255 255
+    center = V2 150 150
+    --
+    stamp :: Double -> Int -> ProtoT ()
+    stamp base i =
+      P.renderS sprite pos (Just deg)
       where
+        deg = base + fromIntegral i * 60
         rad = pi * deg / 180
-        dx = cos rad * 50
-        dy = sin rad * 50
-        x = truncate $ 100 + dx
-        y = truncate $ 200 + dy
+        dp = (truncate . (* 50)) <$> V2 (cos rad) (sin rad)
+        pos = center + dp

@@ -2,6 +2,7 @@ module Protonic.Pad
 (
   Pad
 , KeyInput (..)
+, Pointer (..)
 , mkPad
 , makeActionsFrom
 ) where
@@ -9,17 +10,27 @@ module Protonic.Pad
 import           Data.List       (nub)
 import qualified Data.Map.Strict as M
 import           Data.Maybe      (fromMaybe)
+import Linear.V2
+import Linear.Affine (Point (..))
+import Data.Int (Int32)
 
 import qualified SDL
 
-data Pad a = Pad !(M.Map KeyInput [a])
+data Pad a = Pad !(M.Map KeyInput [a]) (M.Map Pointer [V2 Int32 -> a])
 
 data KeyInput
   = Key SDL.InputMotion SDL.Keycode
   deriving (Eq, Ord, Show)
 
-mkPad :: [(KeyInput, a)] -> Pad a
-mkPad = Pad . mkmap
+data Pointer
+  = MouseMotion
+  deriving (Eq, Ord, Show)
+
+mkPad ::
+  [(KeyInput, a)] ->
+  [(Pointer, V2 Int32 -> a)] ->
+  Pad a
+mkPad ks ps = Pad (mkmap ks) (mkmap ps)
   where
     mkmap :: (Eq a, Ord a) => [(a, b)] -> M.Map a [b]
     mkmap xs =
@@ -31,13 +42,17 @@ mkPad = Pad . mkmap
           in (a, bs)
 
 makeActionsFrom :: Pad a -> [SDL.Event] -> [a]
-makeActionsFrom (Pad iamap) =
+makeActionsFrom (Pad kmap pmap) =
   concatMap (procEvent . SDL.eventPayload)
   where
     procEvent (SDL.KeyboardEvent dat) =
-      fromMaybe [] (M.lookup inputdata iamap)
+      fromMaybe [] (M.lookup keyInput kmap)
       where
         motion = SDL.keyboardEventKeyMotion dat
         keycode = SDL.keysymKeycode . SDL.keyboardEventKeysym $ dat
-        inputdata = Key motion keycode
+        keyInput = Key motion keycode
+    procEvent (SDL.MouseMotionEvent dat) =
+      maybe [] (map (\f -> f pos)) (M.lookup MouseMotion pmap)
+      where
+        (P pos) = SDL.mouseMotionEventPos dat
     procEvent _ = []

@@ -21,6 +21,7 @@ module Protonic
   -- Pad
   , Pad
   , KeyInput (..)
+  , Pointer (..)
   , mkPad
   , makeActionsFrom
   ) where
@@ -28,6 +29,6 @@ module Protonic
 import           Protonic.Core   (Config (..), ProtoT, defaultConfig, frame,
                                   runGame, runProtoT, withProtonic)
 import           Protonic.Data   (Font, Sprite)
-import           Protonic.Pad    (KeyInput (..), Pad, makeActionsFrom, mkPad)
+import           Protonic.Pad    (KeyInput (..), Pointer (..), Pad, makeActionsFrom, mkPad)
 import           Protonic.Render (clearBy, renderS, testText)
 import           Protonic.Sprite (freeFont, freeSprite, newFont, newSprite)

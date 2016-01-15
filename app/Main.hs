@@ -2,6 +2,7 @@ module Main where
 
 import           Control.Exception     (bracket)
 import           Control.Monad.State
+import           Data.Int (Int32)
 import           Linear.V2
 import           Linear.V4
 import           Control.Lens
@@ -9,7 +10,7 @@ import           Control.Lens
 import qualified SDL
 
 import           Protonic              (ProtoT, runGame, runProtoT,
-                                        withProtonic, Pad, KeyInput (..), mkPad)
+                                        withProtonic, Pad, KeyInput (..), Pointer (..), mkPad)
 import qualified Protonic              as P
 import qualified Protonic.Data         as D
 
@@ -27,6 +28,7 @@ data Action
   | MoveD
   | MoveL
   | MoveR
+  | PointAt (V2 Int32)
   deriving Show
 
 main :: IO ()
@@ -49,17 +51,26 @@ main =
     freeApp app = P.freeSprite $ appStar app
 
 normalPad :: Pad Action
-normalPad = mkPad
-  [ (Key SDL.Pressed SDL.KeycodeW, MoveU)
-  , (Key SDL.Pressed SDL.KeycodeS, MoveD)
-  , (Key SDL.Pressed SDL.KeycodeA, MoveL)
-  , (Key SDL.Pressed SDL.KeycodeD, MoveR)
-  ]
+normalPad = mkPad key pointer
+  where
+    key = [ (Key SDL.Pressed SDL.KeycodeW, MoveU)
+          , (Key SDL.Pressed SDL.KeycodeKP8, MoveU)
+          , (Key SDL.Pressed SDL.KeycodeS, MoveD)
+          , (Key SDL.Pressed SDL.KeycodeKP2, MoveD)
+          , (Key SDL.Pressed SDL.KeycodeA, MoveL)
+          , (Key SDL.Pressed SDL.KeycodeKP4, MoveL)
+          , (Key SDL.Pressed SDL.KeycodeD, MoveR)
+          , (Key SDL.Pressed SDL.KeycodeKP6, MoveR)
+          ]
+    pointer = [(MouseMotion, PointAt)]
 
 update :: App -> [Action] -> ProtoT App
 update app as = snd <$> runStateT go app
   where
-    go = setDeg >> mapM_ move as
+    go = do
+      setDeg
+      mapM_ move as
+      mapM_ printPos as
 
     setDeg :: StateT App ProtoT ()
     setDeg = do
@@ -74,6 +85,10 @@ update app as = snd <$> runStateT go app
         work MoveD = _y +~ 1
         work MoveL = _x -~ 1
         work MoveR = _x +~ 1
+        work _     = id
+
+    printPos (PointAt p) = liftIO . print $ p
+    printPos _         = return ()
 
 render :: App -> ProtoT ()
 render app = do

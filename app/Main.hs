@@ -20,8 +20,8 @@ main =
   where
     initializeApp :: ProtoT App
     initializeApp = do
-      font <- P.newFont 20
-      App 0 <$> P.newSprite font "@"
+      font <- P.newFont 30
+      App 0 <$> P.newSprite font (V4 100 200 255 255) "@"
 
 update :: App -> ProtoT App
 update app = snd <$> runStateT go app

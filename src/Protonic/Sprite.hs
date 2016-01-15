@@ -3,6 +3,8 @@ module Protonic.Sprite where
 import           Control.Exception       (bracket)
 import           Control.Monad.Reader
 import           Linear.V2
+import           Linear.V4
+import Data.Word (Word8)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import qualified SDL
@@ -22,12 +24,12 @@ freeFont (Font font) =
   liftIO $ TTF.closeFont font
 
 -- TODO: Change color
-newSprite :: Font -> String -> ProtoT Sprite
-newSprite (Font font) str = do
+newSprite :: Font -> V4 Word8 -> String -> ProtoT Sprite
+newSprite (Font font) (V4 cr cg cb ca) str = do
   rndr <- asks renderer
   liftIO $ do
     (w,h) <- TTF.sizeText font str
-    texture <- bracket (mkSurface <$> TTF.renderTextBlended font str (Color 255 255 255 255))
+    texture <- bracket (mkSurface <$> TTF.renderTextBlended font str (Color cr cg cb ca))
                        SDL.freeSurface
                        (SDL.createTextureFromSurface rndr)
     return $ Sprite texture (V2 (fromIntegral w) (fromIntegral h))

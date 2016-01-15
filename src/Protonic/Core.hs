@@ -110,8 +110,8 @@ runGame proto update render pad app = do
   return ()
 
 mainLoop :: a -> Pad act -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
-mainLoop app pad update render =
-  loop app =<< SDL.ticks
+mainLoop iniApp pad update render =
+  loop iniApp =<< SDL.ticks
   where
     loop app time = do
       -- Update

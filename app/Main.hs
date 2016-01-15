@@ -4,6 +4,7 @@ import           Control.Exception     (bracket)
 import           Control.Monad.State
 import           Linear.V2
 import           Linear.V4
+import           Control.Lens
 
 import qualified SDL
 
@@ -13,8 +14,12 @@ import qualified Protonic              as P
 import qualified Protonic.Data         as D
 
 data App = App
-  { appState  :: Double
-  , appSprite :: P.Sprite
+  {
+    appPos :: V2 Int
+  , appAtmark :: P.Sprite
+  --
+  , appDeg  :: Double
+  , appStar :: P.Sprite
   }
 
 data Action
@@ -34,11 +39,14 @@ main =
     --
     initializeApp :: ProtoT App
     initializeApp = do
-      font <- P.newFont 100
-      App 0 <$> P.newSprite font (V4 100 200 255 255) "@"
+      font <- P.newFont 20
+      atmark <- P.newSprite font (V4 255 255 0 255) "@"
+      fontBig <- P.newFont 100
+      star <- P.newSprite fontBig (V4 100 200 255 255) "*"
+      return $ App (V2 5 5) atmark 0 star
     --
     freeApp :: App -> IO ()
-    freeApp app = P.freeSprite $ appSprite app
+    freeApp app = P.freeSprite $ appStar app
 
 normalPad :: Pad Action
 normalPad = mkPad
@@ -51,27 +59,46 @@ normalPad = mkPad
 update :: App -> [Action] -> ProtoT App
 update app as = snd <$> runStateT go app
   where
-    go :: StateT App ProtoT ()
-    go = do
+    go = setDeg >> mapM_ move as
+
+    setDeg :: StateT App ProtoT ()
+    setDeg = do
       t <- lift P.frame
       let deg = fromIntegral $ (t * 8) `mod` 360
-      modify (\a -> a {appState = deg})
+      modify (\a -> a {appDeg = deg})
+
+    move :: Action -> StateT App ProtoT ()
+    move act = modify (\a -> let p = appPos a in a {appPos = work act p})
+      where
+        work MoveU = _y -~ 1
+        work MoveD = _y +~ 1
+        work MoveL = _x -~ 1
+        work MoveR = _x +~ 1
 
 render :: App -> ProtoT ()
-render (App stt sprite) = do
+render app = do
   P.clearBy $ V4 0 0 0 255
-  P.testText (V2 20 50) white $ (\i -> show (i :: Int)) $ truncate stt
-  mapM_ (stamp stt) [0..75]
+  -- Atmark
+  P.testText (V2 20 34) white $ "Move (WASD) " ++ show markPos
+  P.renderS atmark markPos Nothing Nothing
+  -- Star
+  P.testText (V2 20 50) white $ (\i -> show (i :: Int)) $ truncate baseDeg
+  mapM_ (stamp baseDeg) [0..75]
   where
+    markPos = V2 10 20 * appPos app
+    atmark = appAtmark app
+    baseDeg = appDeg app
+    star = appStar app
+    --
     white = V4 255 255 255 255
     center = V2 150 150
     --
     stamp :: Double -> Int -> ProtoT ()
     stamp base i =
-      P.renderS sprite pos (Just size) (Just deg)
+      P.renderS star pos (Just size) (Just deg)
       where
         mul = 0.95 ** fromIntegral i :: Double
-        size = (truncate . (* mul) . fromIntegral) <$> D.spsize sprite
+        size = (truncate . (* mul) . fromIntegral) <$> D.spsize star
         --
         r = 250
         deg = base + fromIntegral i * 23

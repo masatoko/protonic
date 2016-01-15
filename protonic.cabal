@@ -45,6 +45,7 @@ executable proto
   build-depends:       base
                      , protonic
                      , sdl2 >= 2
+                     , lens
                      , mtl
                      , linear
   default-language:    Haskell2010

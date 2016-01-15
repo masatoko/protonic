@@ -1,5 +1,6 @@
 module Main where
 
+import           Control.Monad.State
 import           Linear.V2
 import           Linear.V4
 
@@ -12,12 +13,18 @@ main :: IO ()
 main =
   withProtonic $ \proto -> do
     (app,_) <- runProtoT proto initializeApp
-    runGame proto (render app)
+    runGame proto app update (render app)
   where
     initializeApp :: ProtoT App
     initializeApp = do
       font <- P.newFont 20
       App <$> P.newSprite font "@"
+
+update :: App -> ProtoT App
+update app = snd <$> runStateT go app
+  where
+    go :: StateT App ProtoT ()
+    go = return ()
 
 render :: App -> ProtoT ()
 render (App sprite) = do

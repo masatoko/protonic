@@ -92,18 +92,19 @@ withProtonic go =
           }
 
 -- Start game
-runGame :: Proto -> ProtoT () -> IO ()
-runGame proto render = do
-  _ <- runProtoT proto (mainLoop render)
+runGame :: Proto -> a -> (a -> ProtoT a) -> ProtoT () -> IO ()
+runGame proto app update render = do
+  _ <- runProtoT proto (mainLoop app update render)
   return ()
 
-mainLoop :: ProtoT () -> ProtoT ()
-mainLoop render =
-  go =<< SDL.ticks
+mainLoop :: a -> (a -> ProtoT a) -> ProtoT () -> ProtoT ()
+mainLoop app update render =
+  go app =<< SDL.ticks
   where
-    go t = do
+    go a t = do
       --
       procEvents
+      a' <- update a
       render
       updateFPS
       printFPS
@@ -113,7 +114,7 @@ mainLoop render =
       --
       advance
       quit <- gets psClosed
-      unless quit (go t')
+      unless quit (go a' t')
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time

@@ -2,20 +2,22 @@
 
 module Protonic.Core where
 
-import           Control.Exception       (bracket, bracket_, throwIO)
-import           Control.Monad.Managed   (managed, runManaged)
+import           Control.Exception            (bracket, bracket_, throwIO)
+import           Control.Monad.Managed        (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.Text               as T
-import           Data.Word               (Word32)
-import           Linear.Affine           (Point (..))
+import qualified Data.Text                    as T
+import           Data.Word                    (Word32)
+import           Linear.Affine                (Point (..))
 import           Linear.V2
 -- import           System.Directory        (doesFileExist)
 
-import qualified Graphics.UI.SDL.TTF     as TTF
-import           Graphics.UI.SDL.TTF.FFI (TTFFont)
+import qualified Graphics.UI.SDL.TTF          as TTF
+import           Graphics.UI.SDL.TTF.FFI      (TTFFont)
 import qualified SDL
-import           SDL.Raw                 (Color (..))
+import           SDL.Raw                      (Color (..))
+
+import           Protonic.Pad
 
 data Config = Config
   { winSize :: V2 Int
@@ -102,29 +104,31 @@ withProtonic config go =
 
 
 -- Start game
-runGame :: Proto -> a -> (a -> ProtoT a) -> (a -> ProtoT ()) -> IO ()
-runGame proto app update render = do
-  _ <- runProtoT proto (mainLoop app update render)
+runGame :: Proto -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> Pad act -> a -> IO ()
+runGame proto update render pad app = do
+  _ <- runProtoT proto (mainLoop app pad update render)
   return ()
 
-mainLoop :: a -> (a -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
-mainLoop app update render =
-  go app =<< SDL.ticks
+mainLoop :: a -> Pad act -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
+mainLoop app pad update render =
+  loop app =<< SDL.ticks
   where
-    go a t = do
-      --
-      procEvents
-      a' <- update a
-      render a'
+    loop app time = do
+      -- Update
+      events <- SDL.pollEvents
+      procEvents events
+      app' <- update app $ pad `makeActionsFrom` events
+      -- Rendering
+      render app'
       updateFPS
       printFPS
       SDL.present =<< asks renderer
-      --
-      t' <- wait t
-      --
+      -- Advance Proto
+      time' <- wait time
       advance
+      -- Next loop
       quit <- gets psClosed
-      unless quit (go a' t')
+      unless quit (loop app' time')
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -183,8 +187,8 @@ openFont str size = do
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 
-procEvents :: ProtoT ()
-procEvents = SDL.mapEvents (work . SDL.eventPayload)
+procEvents :: [SDL.Event] -> ProtoT ()
+procEvents = mapM_ (work . SDL.eventPayload)
   where
     work :: SDL.EventPayload -> ProtoT ()
     work (SDL.WindowClosedEvent _) = quit

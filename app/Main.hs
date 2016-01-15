@@ -1,13 +1,14 @@
 module Main where
 
 import           Control.Exception     (bracket)
-import           Control.Monad.Managed (managed, runManaged)
 import           Control.Monad.State
 import           Linear.V2
 import           Linear.V4
 
+import qualified SDL
+
 import           Protonic              (ProtoT, runGame, runProtoT,
-                                        withProtonic)
+                                        withProtonic, Pad, Input (..), mkPad)
 import qualified Protonic              as P
 import qualified Protonic.Data         as D
 
@@ -16,14 +17,28 @@ data App = App
   , appSprite :: P.Sprite
   }
 
+data Action
+  = MoveU
+  | MoveD
+  | MoveL
+  | MoveR
+  deriving Show
+
 main :: IO ()
 main =
   withProtonic conf $ \proto ->
-    runManaged $ do
-      app <- managed $ bracket (fst <$> runProtoT proto initializeApp) freeApp
-      liftIO $ runGame proto app update render
+    bracket (fst <$> runProtoT proto initializeApp) freeApp $ \app ->
+      runGame proto update render pad app
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
+    --
+    pad :: Pad Action
+    pad = mkPad
+      [ ([Key SDL.Pressed SDL.KeycodeW], MoveU)
+      , ([Key SDL.Pressed SDL.KeycodeS], MoveD)
+      , ([Key SDL.Pressed SDL.KeycodeA], MoveL)
+      , ([Key SDL.Pressed SDL.KeycodeD], MoveR)
+      ]
     --
     initializeApp :: ProtoT App
     initializeApp = do
@@ -33,8 +48,8 @@ main =
     freeApp :: App -> IO ()
     freeApp app = P.freeSprite $ appSprite app
 
-update :: App -> ProtoT App
-update app = snd <$> runStateT go app
+update :: App -> [Action] -> ProtoT App
+update app as = snd <$> runStateT go app
   where
     go :: StateT App ProtoT ()
     go = do

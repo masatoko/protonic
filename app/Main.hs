@@ -50,10 +50,10 @@ main =
 
 normalPad :: Pad Action
 normalPad = mkPad
-  [ ([Key SDL.Pressed SDL.KeycodeW], MoveU)
-  , ([Key SDL.Pressed SDL.KeycodeS], MoveD)
-  , ([Key SDL.Pressed SDL.KeycodeA], MoveL)
-  , ([Key SDL.Pressed SDL.KeycodeD], MoveR)
+  [ ([Key SDL.Pressed SDL.KeycodeW, Key SDL.Pressed SDL.KeycodeKP8], MoveU)
+  , ([Key SDL.Pressed SDL.KeycodeS, Key SDL.Pressed SDL.KeycodeKP2], MoveD)
+  , ([Key SDL.Pressed SDL.KeycodeA, Key SDL.Pressed SDL.KeycodeKP4], MoveL)
+  , ([Key SDL.Pressed SDL.KeycodeD, Key SDL.Pressed SDL.KeycodeKP6], MoveR)
   ]
 
 update :: App -> [Action] -> ProtoT App

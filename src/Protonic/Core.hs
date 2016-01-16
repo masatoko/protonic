@@ -2,20 +2,22 @@
 
 module Protonic.Core where
 
-import           Control.Exception            (bracket, bracket_, throwIO)
-import           Control.Monad.Managed        (managed, runManaged)
+import           Control.Exception       (bracket, bracket_, throwIO)
+import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.Text                    as T
-import           Data.Word                    (Word32)
-import           Linear.Affine                (Point (..))
+import qualified Data.Text               as T
+import           Data.Word               (Word32)
+import           Linear.Affine           (Point (..))
 import           Linear.V2
+import           Linear.V4
 -- import           System.Directory        (doesFileExist)
 
-import qualified Graphics.UI.SDL.TTF          as TTF
-import           Graphics.UI.SDL.TTF.FFI      (TTFFont)
+import qualified Graphics.UI.SDL.TTF     as TTF
+import           Graphics.UI.SDL.TTF.FFI (TTFFont)
+import           SDL                     (($=))
 import qualified SDL
-import           SDL.Raw                      (Color (..))
+import           SDL.Raw                 (Color (..))
 
 import           Protonic.Metapad
 
@@ -123,6 +125,7 @@ mainLoop iniApp pad update render =
       procEvents events
       app' <- update app =<< makeActions pad
       -- Rendering
+      preRender
       render app'
       updateFPS
       printFPS
@@ -144,6 +147,12 @@ mainLoop iniApp pad update render =
       when (tFPS > dt) $
         SDL.delay $ fromIntegral $ tFPS - dt
       SDL.ticks
+
+    preRender :: ProtoT ()
+    preRender = do
+      r <- asks renderer
+      SDL.rendererDrawColor r $= V4 0 0 0 255
+      SDL.clear r
 
     updateFPS :: ProtoT ()
     updateFPS = do

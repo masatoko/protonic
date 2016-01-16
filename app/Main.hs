@@ -44,7 +44,7 @@ main =
     initializeApp :: ProtoT App
     initializeApp = do
       font <- P.newFont 20
-      mark <- P.newSprite font (V4 255 255 0 255) ">(蟹)<"
+      mark <- P.newSprite font (V4 255 255 0 255) ">(@=@)<"
       fontBig <- P.newFont 100
       star <- P.newSprite fontBig (V4 100 200 255 255) "*"
       return $ App (V2 10 100) mark 0 0 star
@@ -84,8 +84,8 @@ update app as = snd <$> runStateT go app
       where
         work MoveU = _y -~ 2
         work MoveD = _y +~ 2
-        work MoveL = _x -~ 4
-        work MoveR = _x +~ 4
+        work MoveL = _x -~ 2
+        work MoveR = _x +~ 2
         work _     = id
 
     printPos (PointAt p) = lift . P.printsys' . show $ p
@@ -105,7 +105,7 @@ render :: App -> ProtoT ()
 render app = do
   P.clearBy $ V4 0 0 0 255
   -- Mark
-  P.printsys' $ "WASDで動かす: " ++ show markPos
+  P.printsys' $ "Move (WASD) " ++ show markPos
   P.renderS mark markPos Nothing (Just (appMarkDeg app))
   -- Star
   P.printsys' $ (\i -> show (i :: Int)) $ truncate baseDeg

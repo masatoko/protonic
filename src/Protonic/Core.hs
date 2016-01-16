@@ -17,7 +17,7 @@ import           Graphics.UI.SDL.TTF.FFI      (TTFFont)
 import qualified SDL
 import           SDL.Raw                      (Color (..))
 
-import           Protonic.Pad
+import           Protonic.Metapad
 
 data Config = Config
   { winSize :: V2 Int
@@ -109,12 +109,12 @@ withProtonic config go =
 
 
 -- Start game
-runGame :: Proto -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> Pad act -> a -> IO ()
+runGame :: Proto -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> Metapad act -> a -> IO ()
 runGame proto update render pad app = do
   _ <- runProtoT proto (mainLoop app pad update render)
   return ()
 
-mainLoop :: a -> Pad act -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
+mainLoop :: a -> Metapad act -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
 mainLoop iniApp pad update render =
   loop iniApp =<< SDL.ticks
   where
@@ -122,7 +122,7 @@ mainLoop iniApp pad update render =
       -- Update
       events <- SDL.pollEvents
       procEvents events
-      app' <- update app $ pad `makeActionsFrom` events
+      app' <- update app =<< makeActions pad
       -- Rendering
       render app'
       updateFPS

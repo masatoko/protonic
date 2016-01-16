@@ -19,17 +19,17 @@ module Protonic
   -- Sprite
   , newFont, freeFont
   , newSprite, freeSprite
-  -- Pad
-  , Pad
-  , KeyInput (..)
-  , Pointer (..)
-  , mkPad
-  , makeActionsFrom
+  -- Metapad
+  , Metapad
+  , newPad
+  , addAction
+  , Input
+  , keyAct
   ) where
 
 import           Protonic.Core   (Config (..), ProtoT, defaultConfig, frame,
                                   runGame, runProtoT, withProtonic, printsys)
 import           Protonic.Data   (Font, Sprite)
-import           Protonic.Pad    (KeyInput (..), Pointer (..), Pad, makeActionsFrom, mkPad)
 import           Protonic.Render (clearBy, renderS, testText)
 import           Protonic.Sprite (freeFont, freeSprite, newFont, newSprite)
+import           Protonic.Metapad (Metapad, newPad, addAction, Input , keyAct)

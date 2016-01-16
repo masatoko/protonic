@@ -22,7 +22,7 @@ library
   other-modules:       Protonic.Core
                      , Protonic.Render
                      , Protonic.Sprite
-                     , Protonic.Pad
+                     , Protonic.Metapad
   -- other-extensions:
   pkgconfig-depends:   sdl2 >= 2
                      , SDL2_ttf >= 2

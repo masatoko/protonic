@@ -9,8 +9,8 @@ import           Linear.V4
 
 import qualified SDL
 
-import           Protonic            (KeyInput (..), Pad, Pointer (..), ProtoT,
-                                      mkPad, runGame, runProtoT, withProtonic)
+import           Protonic            (Metapad, ProtoT, addAction, keyAct,
+                                      newPad, runGame, runProtoT, withProtonic)
 import qualified Protonic            as P
 import qualified Protonic.Data       as D
 
@@ -35,7 +35,7 @@ main :: IO ()
 main =
   withProtonic conf $ \proto ->
     bracket (fst <$> runProtoT proto initializeApp) freeApp $ \app ->
-      runGame proto update render normalPad app
+      runGame proto update render metaPad app
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
     --
@@ -50,19 +50,16 @@ main =
     freeApp :: App -> IO ()
     freeApp app = P.freeSprite $ appStar app
 
-normalPad :: Pad Action
-normalPad = mkPad key pointer
+metaPad :: Metapad Action
+metaPad = execState work newPad
   where
-    key = [ (Key SDL.Pressed SDL.KeycodeW, MoveU)
-          , (Key SDL.Pressed SDL.KeycodeKP8, MoveU)
-          , (Key SDL.Pressed SDL.KeycodeS, MoveD)
-          , (Key SDL.Pressed SDL.KeycodeKP2, MoveD)
-          , (Key SDL.Pressed SDL.KeycodeA, MoveL)
-          , (Key SDL.Pressed SDL.KeycodeKP4, MoveL)
-          , (Key SDL.Pressed SDL.KeycodeD, MoveR)
-          , (Key SDL.Pressed SDL.KeycodeKP6, MoveR)
-          ]
-    pointer = [(MouseMotion, PointAt)]
+    work =
+      mapM_ (modify . addAction . uncurry keyAct)
+        [ (SDL.ScancodeW, MoveU)
+        , (SDL.ScancodeS, MoveD)
+        , (SDL.ScancodeA, MoveL)
+        , (SDL.ScancodeD, MoveR)
+        ]
 
 update :: App -> [Action] -> ProtoT App
 update app as = snd <$> runStateT go app
@@ -100,7 +97,7 @@ render app = do
   P.printsys $ (\i -> show (i :: Int)) $ truncate baseDeg
   mapM_ (stamp baseDeg) [0..75]
   where
-    markPos = V2 10 20 * appPos app
+    markPos = V2 1 2 * appPos app
     atmark = appAtmark app
     baseDeg = appDeg app
     star = appStar app

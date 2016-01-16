@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import           Control.Exception   (bracket)
@@ -17,7 +19,7 @@ import qualified Protonic.Data       as D
 data App = App
   {
     appPos    :: V2 Int
-  , appAtmark :: P.Sprite
+  , appMark :: P.Sprite
   --
   , appDeg    :: Double
   , appStar   :: P.Sprite
@@ -42,10 +44,10 @@ main =
     initializeApp :: ProtoT App
     initializeApp = do
       font <- P.newFont 20
-      atmark <- P.newSprite font (V4 255 255 0 255) "@"
+      mark <- P.newSprite font (V4 255 255 0 255) ">(蟹)<"
       fontBig <- P.newFont 100
       star <- P.newSprite fontBig (V4 100 200 255 255) "*"
-      return $ App (V2 5 5) atmark 0 star
+      return $ App (V2 10 100) mark 0 star
     --
     freeApp :: App -> IO ()
     freeApp app = P.freeSprite $ appStar app
@@ -91,15 +93,15 @@ update app as = snd <$> runStateT go app
 render :: App -> ProtoT ()
 render app = do
   P.clearBy $ V4 0 0 0 255
-  -- Atmark
+  -- Mark
   P.printsys' $ "WASDで動かす: " ++ show markPos
-  P.renderS atmark markPos Nothing Nothing
+  P.renderS mark markPos Nothing Nothing
   -- Star
   P.printsys' $ (\i -> show (i :: Int)) $ truncate baseDeg
   mapM_ (stamp baseDeg) [0..75]
   where
-    markPos = V2 1 2 * appPos app
-    atmark = appAtmark app
+    markPos = V2 5 1 * appPos app
+    mark = appMark app
     baseDeg = appDeg app
     star = appStar app
     --

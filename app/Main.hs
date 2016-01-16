@@ -5,7 +5,6 @@ module Main where
 import           Control.Exception   (bracket)
 import           Control.Lens
 import           Control.Monad.State
-import           Data.Int            (Int32)
 import           Linear.V2
 import           Linear.V4
 
@@ -19,7 +18,8 @@ import qualified Protonic.Data       as D
 data App = App
   {
     appPos    :: V2 Int
-  , appMark :: P.Sprite
+  , appMark   :: P.Sprite
+  , appMarkDeg :: Double
   --
   , appDeg    :: Double
   , appStar   :: P.Sprite
@@ -30,7 +30,7 @@ data Action
   | MoveD
   | MoveL
   | MoveR
-  | PointAt (V2 Int32)
+  | PointAt (V2 Int)
   deriving Show
 
 main :: IO ()
@@ -47,7 +47,7 @@ main =
       mark <- P.newSprite font (V4 255 255 0 255) ">(蟹)<"
       fontBig <- P.newFont 100
       star <- P.newSprite fontBig (V4 100 200 255 255) "*"
-      return $ App (V2 10 100) mark 0 star
+      return $ App (V2 10 100) mark 0 0 star
     --
     freeApp :: App -> IO ()
     freeApp app = P.freeSprite $ appStar app
@@ -71,6 +71,7 @@ update app as = snd <$> runStateT go app
       setDeg
       mapM_ move as
       mapM_ printPos as
+      mapM_ lookat as
 
     setDeg :: StateT App ProtoT ()
     setDeg = do
@@ -81,26 +82,36 @@ update app as = snd <$> runStateT go app
     move :: Action -> StateT App ProtoT ()
     move act = modify (\a -> let p = appPos a in a {appPos = work act p})
       where
-        work MoveU = _y -~ 1
-        work MoveD = _y +~ 1
-        work MoveL = _x -~ 1
-        work MoveR = _x +~ 1
+        work MoveU = _y -~ 2
+        work MoveD = _y +~ 2
+        work MoveL = _x -~ 4
+        work MoveR = _x +~ 4
         work _     = id
 
     printPos (PointAt p) = lift . P.printsys' . show $ p
     printPos _           = return ()
+
+    lookat :: Action -> StateT App ProtoT ()
+    lookat (PointAt p1) = do
+      t <- lift P.frame
+      let dd = fromIntegral $ t `mod` 7 - 3
+      p0 <- gets appPos
+      let (V2 dx dy) = fromIntegral <$> p1 - p0
+          deg = (atan2 dy (dx :: Double) / pi * 180) + 90 + dd
+      modify (\a -> a {appMarkDeg = deg})
+    lookat _ = return ()
 
 render :: App -> ProtoT ()
 render app = do
   P.clearBy $ V4 0 0 0 255
   -- Mark
   P.printsys' $ "WASDで動かす: " ++ show markPos
-  P.renderS mark markPos Nothing Nothing
+  P.renderS mark markPos Nothing (Just (appMarkDeg app))
   -- Star
   P.printsys' $ (\i -> show (i :: Int)) $ truncate baseDeg
   mapM_ (stamp baseDeg) [0..75]
   where
-    markPos = V2 5 1 * appPos app
+    markPos = appPos app
     mark = appMark app
     baseDeg = appDeg app
     star = appStar app

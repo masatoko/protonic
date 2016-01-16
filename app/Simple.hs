@@ -18,9 +18,9 @@ data App = App P.Sprite
 initApp :: ProtoT App
 initApp = do
   font <- P.newFont 50
-  app <- App <$> P.newSprite font (V4 255 255 255 255) "熊"
+  char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
-  return app
+  return $ App char
 
 freeApp :: App -> IO ()
 freeApp (App s) = P.freeSprite s

@@ -64,8 +64,8 @@ metaPad = execState work newPad
         ]
       modify . addAction $ P.mousePosAct PointAt
 
-update :: App -> [Action] -> ProtoT App
-update app as = snd <$> runStateT go app
+update :: [Action] -> App -> ProtoT App
+update as = execStateT go
   where
     go = do
       setDeg

@@ -112,12 +112,12 @@ withProtonic config go =
           }
 
 -- Start game
-runGame :: Proto -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> Metapad act -> a -> IO ()
+runGame :: Proto -> ([act] -> a -> ProtoT a) -> (a -> ProtoT ()) -> Metapad act -> a -> IO ()
 runGame proto update render pad app = do
   _ <- runProtoT proto (mainLoop app pad update render)
   return ()
 
-mainLoop :: a -> Metapad act -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
+mainLoop :: a -> Metapad act -> ([act] -> a -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
 mainLoop iniApp pad update render =
   loop iniApp =<< SDL.ticks
   where
@@ -125,7 +125,8 @@ mainLoop iniApp pad update render =
       -- Update
       events <- SDL.pollEvents
       procEvents events
-      app' <- update app =<< makeActions pad
+      actions <- makeActions pad
+      app' <- update actions app
       -- Rendering
       preRender
       render app'

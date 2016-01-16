@@ -85,17 +85,17 @@ update app as = snd <$> runStateT go app
         work MoveR = _x +~ 1
         work _     = id
 
-    printPos (PointAt p) = lift . P.printsys . show $ p
+    printPos (PointAt p) = lift . P.printsys' . show $ p
     printPos _           = return ()
 
 render :: App -> ProtoT ()
 render app = do
   P.clearBy $ V4 0 0 0 255
   -- Atmark
-  P.printsys $ "Move (WASD) " ++ show markPos
+  P.printsys' $ "WASDで動かす: " ++ show markPos
   P.renderS atmark markPos Nothing Nothing
   -- Star
-  P.printsys $ (\i -> show (i :: Int)) $ truncate baseDeg
+  P.printsys' $ (\i -> show (i :: Int)) $ truncate baseDeg
   mapM_ (stamp baseDeg) [0..75]
   where
     markPos = V2 1 2 * appPos app

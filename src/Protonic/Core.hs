@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Protonic.Core where
 
@@ -6,6 +7,7 @@ import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
+import           Data.Text               (Text)
 import qualified Data.Text               as T
 import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
@@ -17,9 +19,9 @@ import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import           SDL                     (($=))
 import qualified SDL
-import           SDL.Raw                 (Color (..))
 
 import           Protonic.Metapad
+import           Protonic.TTFHelper      (renderBlended, sizeText)
 
 data Config = Config
   { winSize :: V2 Int
@@ -169,8 +171,8 @@ mainLoop iniApp pad update render =
     printFPS = do
       p <- asks debugPrintSystem
       when p $ do
-        printsys =<< (("FPS:" ++) . show) <$> gets actualFPS
-        printsys =<< (("Frame:" ++) . show) <$> gets frameCount
+        printsys' =<< (("FPS:" ++) . show) <$> gets actualFPS
+        printsys' =<< (("Frame:" ++) . show) <$> gets frameCount
 
     advance :: ProtoT ()
     advance = modify $ \s -> let
@@ -182,22 +184,24 @@ mainLoop iniApp pad update render =
 frame :: ProtoT Integer
 frame = gets frameCount
 
-printsys :: String -> ProtoT ()
-printsys str = do
+printsys :: Text -> ProtoT ()
+printsys text = do
   font <- asks systemFont
   r <- asks renderer
   pos <- mkPos <$> gets cursorRow <*> asks fontSize
   modify (\s -> let i = cursorRow s in s {cursorRow = i + 1})
   liftIO $ do
-    (w,h) <- TTF.sizeText font str
+    (w,h) <- sizeText font text
     runManaged $ do
-      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color 0 255 0 255)) SDL.freeSurface
+      surface <- managed $ bracket (renderBlended font (V4 0 255 0 255) text) SDL.freeSurface
       texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
       let rect = Just $ SDL.Rectangle (P pos) (fromIntegral <$> V2 w h)
       SDL.copy r texture Nothing rect
   where
-    mkSurface p = SDL.Surface p Nothing
     mkPos row size = fromIntegral <$> V2 0 (row * size)
+
+printsys' :: String -> ProtoT ()
+printsys' = printsys . T.pack
 
 -- |Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont

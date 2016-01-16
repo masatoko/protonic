@@ -28,9 +28,10 @@ module Protonic
   , mousePosAct
   ) where
 
-import           Protonic.Core   (Config (..), ProtoT, defaultConfig, frame,
-                                  runGame, runProtoT, withProtonic, printsys)
-import           Protonic.Data   (Font, Sprite)
-import           Protonic.Render (clearBy, renderS, testText)
-import           Protonic.Sprite (freeFont, freeSprite, newFont, newSprite)
-import           Protonic.Metapad (Metapad, newPad, addAction, Input , keyAct, mousePosAct)
+import           Protonic.Core    (Config (..), ProtoT, defaultConfig, frame,
+                                   printsys, runGame, runProtoT, withProtonic)
+import           Protonic.Data    (Font, Sprite)
+import           Protonic.Metapad (Input, Metapad, addAction, keyAct,
+                                   mousePosAct, newPad)
+import           Protonic.Render  (clearBy, renderS, testText)
+import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

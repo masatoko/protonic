@@ -41,5 +41,9 @@ makeActions (Metapad fs) = liftIO $ do
 
 -- * Helper
 
-keyAct :: SDL.Scancode -> a -> Input -> Maybe a
+keyAct :: SDL.Scancode -> act -> Input -> Maybe act
 keyAct code act i = if keyState i code then Just act else Nothing
+
+mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
+mousePosAct f i = Just . f $ fromIntegral <$> pos
+  where (P pos) = mousePos i

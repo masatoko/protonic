@@ -9,8 +9,8 @@ import           Linear.V4
 
 import qualified SDL
 
-import           Protonic            (Metapad, ProtoT, addAction, keyAct,
-                                      newPad, runGame, runProtoT, withProtonic)
+import           Protonic            (Metapad, ProtoT, addAction, newPad,
+                                      runGame, runProtoT, withProtonic)
 import qualified Protonic            as P
 import qualified Protonic.Data       as D
 
@@ -53,13 +53,14 @@ main =
 metaPad :: Metapad Action
 metaPad = execState work newPad
   where
-    work =
-      mapM_ (modify . addAction . uncurry keyAct)
+    work = do
+      mapM_ (modify . addAction . uncurry P.keyAct)
         [ (SDL.ScancodeW, MoveU)
         , (SDL.ScancodeS, MoveD)
         , (SDL.ScancodeA, MoveL)
         , (SDL.ScancodeD, MoveR)
         ]
+      modify . addAction $ P.mousePosAct PointAt
 
 update :: App -> [Action] -> ProtoT App
 update app as = snd <$> runStateT go app
@@ -84,7 +85,7 @@ update app as = snd <$> runStateT go app
         work MoveR = _x +~ 1
         work _     = id
 
-    printPos (PointAt p) = liftIO . print $ p
+    printPos (PointAt p) = lift . P.printsys . show $ p
     printPos _           = return ()
 
 render :: App -> ProtoT ()

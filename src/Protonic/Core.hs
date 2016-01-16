@@ -107,7 +107,6 @@ withProtonic config go =
           , SDL.windowInitialSize = fromIntegral <$> winSize conf
           }
 
-
 -- Start game
 runGame :: Proto -> (a -> [act] -> ProtoT a) -> (a -> ProtoT ()) -> Metapad act -> a -> IO ()
 runGame proto update render pad app = do
@@ -191,6 +190,7 @@ printsys str = do
     mkSurface p = SDL.Surface p Nothing
     mkPos row size = fromIntegral <$> V2 0 (row * size)
 
+-- |Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do
   -- p <- doesFileExist str
@@ -198,6 +198,7 @@ openFont str size = do
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 
+-- |Process events about system
 procEvents :: [SDL.Event] -> ProtoT ()
 procEvents = mapM_ (work . SDL.eventPayload)
   where

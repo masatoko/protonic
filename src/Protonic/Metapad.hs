@@ -60,15 +60,11 @@ hold code act i =
 
 pressed :: SDL.Scancode -> act -> Input -> Maybe act
 pressed code act i =
-  if any (isTargetKey code SDL.Pressed) $ keyboard i
-    then Just act
-    else Nothing
+  boolToMaybe act $ any (isTargetKey code SDL.Pressed) $ keyboard i
 
 released :: SDL.Scancode -> act -> Input -> Maybe act
 released code act i =
-  if any (isTargetKey code SDL.Released) $ keyboard i
-    then Just act
-    else Nothing
+  boolToMaybe act $ any (isTargetKey code SDL.Released) $ keyboard i
 
 isTargetKey :: SDL.Scancode -> SDL.InputMotion -> SDL.KeyboardEventData -> Bool
 isTargetKey code motion e =
@@ -80,3 +76,6 @@ isTargetKey code motion e =
 mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
 mousePosAct f i = Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
+
+boolToMaybe :: a -> Bool -> Maybe a
+boolToMaybe a p = if p then Just a else Nothing

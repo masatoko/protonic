@@ -126,7 +126,6 @@ data Scene g a = Scene
 data SceneState = SceneState
   { frameCount :: Integer }
 
-iniSceneState = SceneState 0
 
 data Transition g a
   = Continue
@@ -137,6 +136,8 @@ data Transition g a
 -- Start scene
 runScene :: Proto -> Scene g a -> g -> IO g
 runScene = runS iniSceneState
+  where
+    iniSceneState = SceneState 0
 
 runS :: SceneState -> Proto -> Scene g a -> g -> IO g
 runS s proto scene g = do

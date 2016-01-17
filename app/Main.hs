@@ -30,9 +30,10 @@ freeApp (App s _) = P.freeSprite s
 
 main :: IO ()
 main =
-  withProtonic conf $ \proto ->
-    bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
+  withProtonic conf $ \proto -> do
+    _ <- bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
       runScene proto titleScene app
+    return ()
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
 
@@ -48,7 +49,9 @@ titleScene = Scene commonPad update render
     update :: Update App Action
     update as app = return (trans, app)
       where
-        trans = if Go `elem` as then Next mainScene else Continue
+        trans = if Go `elem` as
+                  then Push mainScene
+                  else Continue
 
     render :: Render App
     render _ = P.testText (V2 100 100) (V4 0 255 255 255) "Press F key to start"

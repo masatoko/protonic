@@ -47,8 +47,8 @@ data ProtoConfig = ProtoConfig
   }
 
 data ProtoState = ProtoState
-  { psQuit            :: !Bool
-  , cursorRow         :: !Int
+  {
+    cursorRow         :: !Int
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   , frameCount        :: !Integer
@@ -60,8 +60,8 @@ data Proto = Proto ProtoConfig ProtoState
 
 initialState :: ProtoState
 initialState = ProtoState
-  { psQuit = False
-  , cursorRow = 0
+  {
+    cursorRow = 0
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   , frameCount = 0
@@ -130,21 +130,24 @@ data Transition app act
   | Push (Scene app act)
 
 -- Start game
-runScene :: Proto -> Scene app act -> app -> IO ()
-runScene proto scene app = do
-  _ <- runProtoT proto (mainLoop app scene)
-  return ()
+runScene :: Proto -> Scene app act -> app -> IO app
+runScene proto scene app =
+  fst <$> runProtoT proto (mainLoop app scene)
 
 --
-mainLoop :: app -> Scene app act -> ProtoT ()
-mainLoop iniApp scene =
-  loop iniApp =<< SDL.ticks
+mainLoop :: app -> Scene app act -> ProtoT app
+mainLoop iniApp scene = do
+  liftIO . putStrLn $ "Start loop"
+  a <- loop iniApp =<< SDL.ticks
+  liftIO . putStrLn $ "End loop"
+  return a
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     --
     loop app time = do
+      liftIO . putChar $ '.'
       -- Update
       events <- SDL.pollEvents
       procEvents events
@@ -160,10 +163,11 @@ mainLoop iniApp scene =
       time' <- wait time
       advance
       -- Scene transition
-      transScene trans
+      (quit, app'') <- transScene trans app'
       -- Next loop
-      q <- gets psQuit
-      unless q (loop app' time')
+      if quit
+        then return app''
+        else loop app'' time'
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -207,11 +211,14 @@ mainLoop iniApp scene =
            , cursorRow = 0
            }
 
-    transScene :: Transition app act -> ProtoT ()
-    transScene Continue = return ()
-    transScene End      = quit
-    transScene (Next _) = return () -- TODO: coding
-    transScene (Push _) = return () -- TODO: coding
+    transScene :: Transition app act -> app -> ProtoT (Bool, app)
+    transScene Continue a = return (False, a)
+    transScene End      a = return (True, a)
+    transScene (Next _) a = return (False, a) -- TODO: coding
+    transScene (Push s) a = do
+      a' <- mainLoop a s
+      liftIO . putStrLn $ "Restart"
+      return (False, a')
 
 frame :: ProtoT Integer
 frame = gets frameCount
@@ -248,9 +255,11 @@ procEvents :: [SDL.Event] -> ProtoT ()
 procEvents = mapM_ (work . SDL.eventPayload)
   where
     work :: SDL.EventPayload -> ProtoT ()
-    work (SDL.WindowClosedEvent _) = quit
-    work  SDL.QuitEvent            = quit
+    -- work (SDL.WindowClosedEvent _) = quitApp
+    work  SDL.QuitEvent            = quitApp
     work _ = return ()
 
-quit :: ProtoT ()
-quit = modify (\s -> s {psQuit = True})
+    quitApp = error "quit" -- TODO: Temporaly
+
+-- quitScene :: ProtoT ()
+-- quitScene = modify (\s -> s {psQuit = True})

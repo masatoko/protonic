@@ -137,42 +137,42 @@ runScene :: Proto -> Scene g a -> g -> IO g
 runScene = runS iniSceneState
 
 runS :: SceneState -> Proto -> Scene g a -> g -> IO g
-runS stt proto scene game = do
-  (game', stt', trans) <- fst <$> runProtoT proto (sceneLoop game stt scene)
+runS s proto scene g = do
+  (g', s', trans) <- fst <$> runProtoT proto (sceneLoop g s scene)
   case trans of
     Continue -> error "runS - Continue"
-    End      -> return game'
-    Next ns  -> runScene proto ns game'
-    Push ns  -> runScene proto ns game' >>= runS stt' proto scene
+    End      -> return g'
+    Next ns  -> runScene proto ns g'
+    Push ns  -> runScene proto ns g' >>= runS s' proto scene
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
-sceneLoop iniGame iniState scene =
-  loop iniGame iniState =<< SDL.ticks
+sceneLoop iniG iniS scene =
+  loop iniG iniS =<< SDL.ticks
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     --
-    loop game stt time = do
+    loop g s t = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions events pad
-      (trans, game') <- update stt actions game
+      (trans, g') <- update s actions g
       -- Rendering
       preRender
-      render game'
+      render g'
       updateFPS
-      printSystem stt
+      printSystem s
       SDL.present =<< asks renderer
       -- Advance Proto
-      time' <- wait time
+      t' <- wait t
       advance
-      let stt' = advanceScene stt
+      let s' = advanceScene s
       -- Next loop
       case trans of
-        Continue -> loop game' stt' time'
-        _        -> return (game', stt', trans)
+        Continue -> loop g' s' t'
+        _        -> return (g', s', trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -181,8 +181,7 @@ sceneLoop iniGame iniState scene =
       fps <- asks graphFPS
       let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
-      when (tFPS > dt) $
-        SDL.delay $ fromIntegral $ tFPS - dt
+      when (tFPS > dt) $ SDL.delay $ fromIntegral $ tFPS - dt
       SDL.ticks
 
     preRender :: ProtoT ()
@@ -198,9 +197,10 @@ sceneLoop iniGame iniState scene =
       preT <- gets graphFlushedTime
       when (curT - preT > 1000) $ do
         fps <- gets graphFlushedCount
-        modify (\s -> s {actualFPS = fps})
-        modify (\s -> s {graphFlushedTime = curT})
-        modify (\s -> s {graphFlushedCount = 0})
+        modify $ \s -> s { actualFPS = fps
+                         , graphFlushedTime = curT
+                         , graphFlushedCount = 0
+                         }
 
     printSystem :: SceneState -> ProtoT ()
     printSystem stt = do

@@ -11,10 +11,8 @@ import           Linear.Affine         (Point (..))
 import           Linear.V2
 import           Linear.V4
 
-import qualified Graphics.UI.SDL.TTF   as TTF
 import           SDL                   (($=))
 import qualified SDL
-import           SDL.Raw               (Color (..))
 
 import           Protonic.Core
 import           Protonic.Data         (Sprite (..))

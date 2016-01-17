@@ -43,8 +43,10 @@ scene = Scene pad update render
       modify . addAction $ P.keyAct SDL.ScancodeF Go
 
     update :: [Action] -> App -> ProtoT App
-    update _as app = flip execStateT app $
-      return ()
+    update as app = flip execStateT app $
+      mapM_ work as
+      where
+        work Go = liftIO . putStrLn $ "Go"
 
     render :: App -> ProtoT ()
     render (App s) = do

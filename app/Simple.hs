@@ -46,15 +46,24 @@ scene = Scene pad update render
       modify . addAction $ P.keyAct SDL.ScancodeF Go
 
     update :: [Action] -> App -> ProtoT App
-    update as app = flip execStateT app $
-      mapM_ count as
+    update as = execStateT go
       where
+        go :: StateT App ProtoT ()
+        go = do
+          mapM_ count as
+          check
+
         count :: Action -> StateT App ProtoT ()
         count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
+
+        check :: StateT App ProtoT ()
+        check = do
+          cnt <- gets appCount
+          when (cnt > 60) $ lift P.end
 
     render :: App -> ProtoT ()
     render (App s i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS s (V2 150 150) Nothing (Just 10)
       P.printsys "Press F key"
-      P.printsys' $ show i
+      P.printsys' $ show i ++ " / 60"

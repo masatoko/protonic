@@ -46,11 +46,12 @@ data ProtoConfig = ProtoConfig
   }
 
 data ProtoState = ProtoState
-  { psClosed          :: !Bool
+  { psQuit          :: !Bool
   , cursorRow         :: !Int
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   , frameCount        :: !Integer
+  , sceneTransition   :: Maybe SceneTransition
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -59,11 +60,12 @@ data Proto = Proto ProtoConfig ProtoState
 
 initialState :: ProtoState
 initialState = ProtoState
-  { psClosed = False
+  { psQuit = False
   , cursorRow = 0
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   , frameCount = 0
+  , sceneTransition = Nothing
   --
   , actualFPS = 0
   }
@@ -118,12 +120,21 @@ data Scene app a = Scene
   , sceneRender :: app -> ProtoT ()
   }
 
+data SceneTransition
+  = End
+  deriving (Show, Eq)
+
 -- Start game
 runScene :: Proto -> Scene app act -> app -> IO ()
 runScene proto scene app = do
   _ <- runProtoT proto (mainLoop app scene)
   return ()
 
+-- | Finish scene
+end :: ProtoT ()
+end = modify (\a -> a {sceneTransition = Just End})
+
+--
 mainLoop :: a -> Scene a act -> ProtoT ()
 mainLoop iniApp scene =
   loop iniApp =<< SDL.ticks
@@ -147,9 +158,11 @@ mainLoop iniApp scene =
       -- Advance Proto
       time' <- wait time
       advance
+      -- Scene transition
+      checkSceneTransition
       -- Next loop
-      quit <- gets psClosed
-      unless quit (loop app' time')
+      q <- gets psQuit
+      unless q (loop app' time')
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -193,6 +206,13 @@ mainLoop iniApp scene =
            , cursorRow = 0
            }
 
+    checkSceneTransition :: ProtoT ()
+    checkSceneTransition = do
+      st <- gets sceneTransition
+      case st of
+        Nothing -> return ()
+        Just End -> quit
+
 frame :: ProtoT Integer
 frame = gets frameCount
 
@@ -232,4 +252,5 @@ procEvents = mapM_ (work . SDL.eventPayload)
     work  SDL.QuitEvent            = quit
     work _ = return ()
 
-    quit = modify (\s -> s {psClosed = True})
+quit :: ProtoT ()
+quit = modify (\s -> s {psQuit = True})

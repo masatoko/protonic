@@ -1,7 +1,7 @@
 module Protonic.Metapad where
 
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Data.Maybe             (isJust, mapMaybe)
+import           Data.Maybe             (mapMaybe)
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2

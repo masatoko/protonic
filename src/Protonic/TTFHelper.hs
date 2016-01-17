@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE LambdaCase               #-}
 
 module Protonic.TTFHelper
   ( sizeText, renderBlended
@@ -48,9 +49,8 @@ sizeText :: MonadIO m => FFI.TTFFont -> Text -> m (Int, Int)
 sizeText font text =
   liftIO . withText text $ \ptr ->
     alloca $ \w ->
-      alloca $ \h -> do
-        ret <- cSizeUNICODE font (castPtr ptr) w h
-        case ret of
+      alloca $ \h ->
+        cSizeUNICODE font (castPtr ptr) w h >>= \case
           0 -> do
             w' <- fromIntegral <$> peek w
             h' <- fromIntegral <$> peek h

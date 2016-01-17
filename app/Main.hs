@@ -79,15 +79,25 @@ mainScene = Scene gamepad update render
         count _  = return ()
 
         trans :: StateT App ProtoT (Transition App Action)
-        trans = do
-          cnt <- gets appCount
-          return $ if cnt > 60
-                     then Next titleScene
-                     else Continue
+        trans = work <$> gets appCount
+          where
+            work cnt
+              | cnt > 60        = Next titleScene -- TODO: Change to clearScene
+              | Enter `elem` as = Push pauseScene
+              | otherwise       = Continue
 
     render :: Render App
     render (App s i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS s (V2 150 150) Nothing (Just 10)
+      P.printsys "Press Enter key to pause"
       P.printsys "Press F key"
       P.printsys' $ show i ++ " / 60"
+
+pauseScene :: Scene App Action
+pauseScene = Scene gamepad update render
+  where
+    update :: Update App Action
+    update as app = return (if Enter `elem` as then End else Continue, app)
+    render :: Render App
+    render _ = P.testText (V2 10 10) (V4 255 255 255 255) "PAUSE"

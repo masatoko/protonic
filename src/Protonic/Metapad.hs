@@ -58,14 +58,14 @@ hold code act i =
     then Just act
     else Nothing
 
-press :: SDL.Scancode -> act -> Input -> Maybe act
-press code act i =
+pressed :: SDL.Scancode -> act -> Input -> Maybe act
+pressed code act i =
   if any (isTargetKey code SDL.Pressed) $ keyboard i
     then Just act
     else Nothing
 
-release :: SDL.Scancode -> act -> Input -> Maybe act
-release code act i =
+released :: SDL.Scancode -> act -> Input -> Maybe act
+released code act i =
   if any (isTargetKey code SDL.Released) $ keyboard i
     then Just act
     else Nothing

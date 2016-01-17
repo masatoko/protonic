@@ -4,6 +4,7 @@
 
 module Protonic.Core where
 
+import           Control.Concurrent      (forkIO)
 import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
@@ -182,7 +183,11 @@ sceneLoop iniG iniS scene =
       fps <- asks graphFPS
       let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
-      when (tFPS > dt) $ SDL.delay $ fromIntegral $ tFPS - dt
+          tWait = tFPS - dt
+      when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
+      if tFPS > dt
+        then printsys . T.pack $ replicate (fromIntegral dt) '*' ++ replicate (fromIntegral tWait) '-'
+        else printsys . T.pack $ replicate (fromIntegral tFPS) '*'
 
     preRender :: ProtoT ()
     preRender = do
@@ -219,14 +224,14 @@ sceneLoop iniG iniS scene =
       r <- asks renderer
       ts <- gets messages
       modify $ \s -> s {messages = []} -- Clear messages
-      foldM_ (work r font) 0 ts
+      foldM_ (work r font) 8 ts
       where
         work r font y text = liftIO $ do
           (w,h) <- sizeText font text
           runManaged $ do
             surface <- managed $ bracket (renderBlended font (V4 0 255 0 255) text) SDL.freeSurface
             texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
-            let rect = Just $ SDL.Rectangle (P (V2 0 y)) (fromIntegral <$> V2 w h)
+            let rect = Just $ SDL.Rectangle (P (V2 8 y)) (fromIntegral <$> V2 w h)
             SDL.copy r texture Nothing rect
           return $ y + fromIntegral h
 

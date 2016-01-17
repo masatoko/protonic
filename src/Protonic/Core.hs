@@ -49,8 +49,7 @@ data ProtoConfig = ProtoConfig
 
 data ProtoState = ProtoState
   {
-    cursorRow    :: !Int
-  , messages     :: [Text]
+    messages     :: [Text]
   , updatedCount :: !Int
   , updatedTime  :: !Time
   --
@@ -62,8 +61,7 @@ data Proto = Proto ProtoConfig ProtoState
 initialState :: ProtoState
 initialState = ProtoState
   {
-    cursorRow = 0
-  , messages = []
+    messages = []
   , updatedCount = 0
   , updatedTime = 0
   --
@@ -126,8 +124,6 @@ data Scene g a = Scene
 data SceneState = SceneState
   { frameCount :: Integer }
 
-iniSceneState = SceneState 0
-
 data Transition g a
   = Continue
   | End
@@ -137,15 +133,17 @@ data Transition g a
 -- Start scene
 runScene :: Proto -> Scene g a -> g -> IO g
 runScene = runS iniSceneState
-
-runS :: SceneState -> Proto -> Scene g a -> g -> IO g
-runS s proto scene g = do
-  (g', s', trans) <- fst <$> runProtoT proto (sceneLoop g s scene)
-  case trans of
-    Continue -> error "runS - Continue"
-    End      -> return g'
-    Next ns  -> runScene proto ns g'
-    Push ns  -> runScene proto ns g' >>= runS s' proto scene
+  where
+    iniSceneState = SceneState 0
+    --
+    runS :: SceneState -> Proto -> Scene g a -> g -> IO g
+    runS s proto scene g = do
+      (g', s', trans) <- fst <$> runProtoT proto (sceneLoop g s scene)
+      case trans of
+        Continue -> error "runS - Continue"
+        End      -> return g'
+        Next ns  -> runScene proto ns g'
+        Push ns  -> runScene proto ns g' >>= runS s' proto scene
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
 sceneLoop iniG iniS scene =
@@ -168,24 +166,23 @@ sceneLoop iniG iniS scene =
       printSystemState s
       printMessages
       SDL.present =<< asks renderer
-      -- Advance Proto
-      t' <- wait t
-      advance
-      let s' = advanceScene s
-      -- Next loop
+      -- Advance State
+      wait t
+      t' <- SDL.ticks
+      let s' = advance s
+      -- Go next loop
       case trans of
         Continue -> loop g' s' t'
         _        -> return (g', s', trans)
 
     -- TODO: Implement frame skip
-    wait :: Time -> ProtoT Time
+    wait :: Time -> ProtoT ()
     wait t = do
       t' <- SDL.ticks
       fps <- asks graphFPS
       let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
       when (tFPS > dt) $ SDL.delay $ fromIntegral $ tFPS - dt
-      SDL.ticks
 
     preRender :: ProtoT ()
     preRender = do
@@ -212,11 +209,8 @@ sceneLoop iniG iniS scene =
         printsys . T.pack =<< (("FPS:" ++) . show) <$> gets actualFPS
         printsys . T.pack . ("Frame:" ++) . show . frameCount $ stt
 
-    advance :: ProtoT ()
-    advance = modify $ \s -> s { cursorRow = 0 }
-
-    advanceScene :: SceneState -> SceneState
-    advanceScene s = s {frameCount = c + 1}
+    advance :: SceneState -> SceneState
+    advance s = s {frameCount = c + 1}
       where c = frameCount s
 
     printMessages :: ProtoT ()

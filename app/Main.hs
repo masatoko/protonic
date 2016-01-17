@@ -4,6 +4,7 @@ module Main where
 
 import           Control.Exception   (bracket)
 import           Control.Monad.State
+import qualified Data.Text           as T
 import           Linear.V2
 import           Linear.V4
 
@@ -93,7 +94,7 @@ mainScene = Scene gamepad update render
       P.renderS s (V2 150 150) Nothing (Just 10)
       P.printsys "Press Enter key to pause"
       P.printsys "Press F key"
-      P.printsys' $ show i ++ " / 60"
+      P.printsys $ T.pack $ show i ++ " / 60"
 
 pauseScene :: Scene App Action
 pauseScene = Scene gamepad update render

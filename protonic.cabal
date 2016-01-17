@@ -47,6 +47,7 @@ executable proto
   build-depends:       base
                      , protonic
                      , sdl2 >= 2
+                     , text
                      , lens
                      , mtl
                      , linear

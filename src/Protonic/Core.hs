@@ -209,8 +209,8 @@ sceneLoop iniG iniS scene =
     printSystemState stt = do
       p <- asks debugPrintSystem
       when p $ do
-        printsys' =<< (("FPS:" ++) . show) <$> gets actualFPS
-        printsys' . ("Frame:" ++) . show . frameCount $ stt
+        printsys . T.pack =<< (("FPS:" ++) . show) <$> gets actualFPS
+        printsys . T.pack . ("Frame:" ++) . show . frameCount $ stt
 
     advance :: ProtoT ()
     advance = modify $ \s -> s { cursorRow = 0 }
@@ -238,9 +238,6 @@ sceneLoop iniG iniS scene =
 
 printsys :: Text -> ProtoT ()
 printsys text = modify $ \s -> let ms = messages s in s {messages = text:ms}
-
-printsys' :: String -> ProtoT ()
-printsys' = printsys . T.pack
 
 -- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont

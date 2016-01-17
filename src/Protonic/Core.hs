@@ -150,7 +150,7 @@ sceneLoop iniApp scene =
       -- Update
       events <- SDL.pollEvents
       procEvents events
-      actions <- makeActions pad
+      actions <- makeActions events pad
       (trans, app') <- update actions app
       -- Rendering
       preRender

@@ -49,11 +49,11 @@ data ProtoConfig = ProtoConfig
 
 data ProtoState = ProtoState
   {
-    cursorRow         :: !Int
-  , graphFlushedCount :: !Int
-  , graphFlushedTime  :: !Time
+    cursorRow    :: !Int
+  , updatedCount :: !Int
+  , updatedTime  :: !Time
   --
-  , actualFPS         :: !Int
+  , actualFPS    :: !Int
   } deriving Show
 
 data Proto = Proto ProtoConfig ProtoState
@@ -62,8 +62,8 @@ initialState :: ProtoState
 initialState = ProtoState
   {
     cursorRow = 0
-  , graphFlushedCount = 0
-  , graphFlushedTime = 0
+  , updatedCount = 0
+  , updatedTime = 0
   --
   , actualFPS = 0
   }
@@ -192,14 +192,14 @@ sceneLoop iniG iniS scene =
 
     updateFPS :: ProtoT ()
     updateFPS = do
-      modify (\s -> let c = graphFlushedCount s in s {graphFlushedCount = c + 1})
+      modify (\s -> let c = updatedCount s in s {updatedCount = c + 1})
       curT <- SDL.ticks
-      preT <- gets graphFlushedTime
+      preT <- gets updatedTime
       when (curT - preT > 1000) $ do
-        fps <- gets graphFlushedCount
+        fps <- gets updatedCount
         modify $ \s -> s { actualFPS = fps
-                         , graphFlushedTime = curT
-                         , graphFlushedCount = 0
+                         , updatedTime = curT
+                         , updatedCount = 0
                          }
 
     printSystem :: SceneState -> ProtoT ()

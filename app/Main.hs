@@ -28,32 +28,35 @@ initApp = do
 freeApp :: App -> IO ()
 freeApp (App s _) = P.freeSprite s
 
-
 main :: IO ()
 main =
   withProtonic conf $ \proto ->
     bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
-      runScene proto mainScene app
+      runScene proto titleScene app
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
 
-data Action = Go
+data Action = Go deriving (Eq, Show)
 
-pad :: Metapad Action
-pad = flip execState newPad $
+commonPad :: Metapad Action
+commonPad = flip execState newPad $
   modify . addAction $ P.keyAct SDL.ScancodeF Go
 
 titleScene :: Scene App Action
-titleScene = Scene pad update render
+titleScene = Scene commonPad update render
   where
     update :: Update App Action
-    update = undefined
+    update as app = do
+      mapM_ work as
+      return app
+      where
+        work Go = P.end -- TODO: Change to next
 
     render :: Render App
-    render = undefined
+    render _ = P.testText (V2 100 100) (V4 0 255 255 255) "Press F key to start"
 
 mainScene :: Scene App Action
-mainScene = Scene pad update render
+mainScene = Scene commonPad update render
   where
     update :: Update App Action
     update as = execStateT go

@@ -60,19 +60,22 @@ hold code act i =
 
 press :: SDL.Scancode -> act -> Input -> Maybe act
 press code act i =
-  if any isTarget es
+  if any (isTargetKey code SDL.Pressed) $ keyboard i
     then Just act
     else Nothing
-  where
-    es = keyboard i
-    isTarget e =
-      let isCode = (SDL.keysymScancode . SDL.keyboardEventKeysym) e == code
-          notRep = not (SDL.keyboardEventRepeat e)
-          isPressed = SDL.keyboardEventKeyMotion e == SDL.Pressed
-      in notRep && isCode && isPressed
 
 release :: SDL.Scancode -> act -> Input -> Maybe act
-release code act i = undefined
+release code act i =
+  if any (isTargetKey code SDL.Released) $ keyboard i
+    then Just act
+    else Nothing
+
+isTargetKey :: SDL.Scancode -> SDL.InputMotion -> SDL.KeyboardEventData -> Bool
+isTargetKey code motion e =
+  let isCode = (SDL.keysymScancode . SDL.keyboardEventKeysym) e == code
+      notRep = not (SDL.keyboardEventRepeat e)
+      isPressed = SDL.keyboardEventKeyMotion e == motion
+  in notRep && isCode && isPressed
 
 mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
 mousePosAct f i = Just . f $ fromIntegral <$> pos

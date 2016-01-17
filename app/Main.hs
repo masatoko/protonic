@@ -40,27 +40,31 @@ main =
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
 
-data Action = Go deriving (Eq, Show)
+data Action
+  = Go
+  | Enter
+  deriving (Eq, Show)
 
-commonPad :: Metapad Action
-commonPad = flip execState newPad $
+gamepad :: Metapad Action
+gamepad = flip execState newPad $ do
   modify . addAction $ P.keyAct SDL.ScancodeF Go
+  modify . addAction $ P.keyAct SDL.ScancodeReturn Enter
 
 titleScene :: Scene App Action
-titleScene = Scene commonPad update render
+titleScene = Scene gamepad update render
   where
     update :: Update App Action
     update as app = return (trans, resetApp app)
       where
-        trans = if Go `elem` as
+        trans = if Enter `elem` as
                   then Push mainScene
                   else Continue
 
     render :: Render App
-    render _ = P.testText (V2 100 100) (V4 0 255 255 255) "Press F key to start"
+    render _ = P.testText (V2 20 100) (V4 0 255 255 255) "Press Enter key to start"
 
 mainScene :: Scene App Action
-mainScene = Scene commonPad update render
+mainScene = Scene gamepad update render
   where
     update :: Update App Action
     update as = runStateT go
@@ -72,6 +76,7 @@ mainScene = Scene commonPad update render
 
         count :: Action -> StateT App ProtoT ()
         count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
+        count _  = return ()
 
         trans :: StateT App ProtoT (Transition App Action)
         trans = do

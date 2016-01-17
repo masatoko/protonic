@@ -2,17 +2,17 @@ module Protonic.Sprite where
 
 import           Control.Exception    (bracket)
 import           Control.Monad.Reader
+import           Data.Text            (Text)
 import           Data.Word            (Word8)
 import           Linear.V2
 import           Linear.V4
-import           Data.Text (Text)
 
 import qualified Graphics.UI.SDL.TTF  as TTF
 import qualified SDL
 
 import           Protonic.Core
 import           Protonic.Data        (Font (..), Sprite (..))
-import Protonic.TTFHelper (sizeText, renderBlended)
+import           Protonic.TTFHelper   (renderBlended, sizeText)
 
 -- Make font from TTF (default path)
 newFont :: Int -> ProtoT Font

@@ -9,13 +9,14 @@ import           Linear.V4
 
 import qualified SDL
 
-import           Protonic            (Metapad, ProtoT, addAction, newPad,
-                                      runScene, runProtoT, withProtonic, Update, Render, Scene (..), Transition (..))
+import           Protonic            (Metapad, ProtoT, Render, Scene (..),
+                                      Transition (..), Update, addAction,
+                                      newPad, runProtoT, runScene, withProtonic)
 import qualified Protonic            as P
 
 data App = App
   { appSprite :: P.Sprite
-  , appCount :: Int
+  , appCount  :: Int
   }
 
 initApp :: ProtoT App

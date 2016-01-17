@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Protonic.Core where
 
@@ -117,7 +117,7 @@ type Update g a = [a] -> g -> ProtoT (Transition g a, g)
 type Render g = g -> ProtoT ()
 
 data Scene g a = Scene
-  { scenePad :: Metapad a
+  { scenePad    :: Metapad a
   , sceneUpdate :: Update g a
   , sceneRender :: Render g
   }

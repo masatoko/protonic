@@ -16,7 +16,7 @@ import qualified SDL
 
 import           Protonic.Core
 import           Protonic.Data         (Sprite (..))
-import           Protonic.TTFHelper    (sizeText, renderBlended)
+import           Protonic.TTFHelper    (renderBlended, sizeText)
 
 clearBy :: V4 Int -> ProtoT ()
 clearBy color = do

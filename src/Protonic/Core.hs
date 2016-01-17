@@ -185,6 +185,7 @@ sceneLoop iniG iniS scene =
           dt = if t' < t then 0 else t' - t
           tWait = tFPS - dt
       when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
+      -- Print updating + rendering time and waiting time for debug
       if tFPS > dt
         then printsys . T.pack $ replicate (fromIntegral dt) '*' ++ replicate (fromIntegral tWait) '-'
         else printsys . T.pack $ replicate (fromIntegral tFPS) '*'

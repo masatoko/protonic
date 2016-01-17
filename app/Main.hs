@@ -101,7 +101,9 @@ pauseScene = Scene gamepad update render
     update :: Update App Action
     update as app = return (if Enter `elem` as then End else Continue, app)
     render :: Render App
-    render _ = P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
+    render _ = do
+      P.clearBy $ V4 50 50 0 255
+      P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
 clearScene :: Scene App Action
 clearScene = Scene gamepad update render
@@ -109,4 +111,6 @@ clearScene = Scene gamepad update render
     update :: Update App Action
     update as app = return (if Enter `elem` as then Next titleScene else Continue, app)
     render :: Render App
-    render _ = P.printTest (V2 10 100) (V4 255 255 255 255) "Congratulation!"
+    render _ = do
+      P.clearBy $ V4 0 0 255 255
+      P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"

@@ -112,7 +112,7 @@ withProtonic config go =
           }
 
 -- Scene
-type Update g a = SceneState -> [a] -> g -> ProtoT (Transition g a, g)
+type Update g a = SceneState -> [a] -> g -> IO (Transition g a, g)
 type Render g = g -> ProtoT ()
 
 data Scene g a = Scene
@@ -158,7 +158,7 @@ sceneLoop iniG iniS scene =
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions events pad
-      (trans, g') <- update s actions g
+      (trans, g') <- liftIO $ update s actions g
       -- Rendering
       preRender
       render g'

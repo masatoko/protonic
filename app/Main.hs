@@ -70,16 +70,16 @@ mainScene = Scene gamepad update render
     update :: Update App Action
     update _ as = runStateT go
       where
-        go :: StateT App ProtoT (Transition App Action)
+        go :: StateT App IO (Transition App Action)
         go = do
           mapM_ count as
           trans
 
-        count :: Action -> StateT App ProtoT ()
+        count :: Action -> StateT App IO ()
         count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
         count _  = return ()
 
-        trans :: StateT App ProtoT (Transition App Action)
+        trans :: StateT App IO (Transition App Action)
         trans = work <$> gets appCount
           where
             work cnt

@@ -4,6 +4,7 @@ import           Control.Exception     (bracket)
 import           Control.Monad.Managed (managed, runManaged)
 import           Control.Monad.Reader
 import           Data.Maybe            (fromMaybe)
+import           Data.Text             (Text)
 import           Data.Word             (Word8)
 import           Foreign.C.Types       (CInt)
 import           Linear.Affine         (Point (..))
@@ -17,6 +18,7 @@ import           SDL.Raw               (Color (..))
 
 import           Protonic.Core
 import           Protonic.Data         (Sprite (..))
+import           Protonic.TTFHelper    (sizeText, renderBlended)
 
 clearBy :: V4 Int -> ProtoT ()
 clearBy color = do
@@ -39,17 +41,16 @@ renderS (Sprite tex size) pos mSize mDeg =
         pRot = Just $ P $ (`div` 2) <$> size'
     copy Nothing r = SDL.copy r tex Nothing dest
 
-testText :: V2 Int -> V4 Word8 -> String -> ProtoT ()
-testText pos (V4 r g b a) str = do
+printTest :: V2 Int -> V4 Word8 -> Text -> ProtoT ()
+printTest pos color text = do
   font <- asks systemFont
   rndr <- asks renderer
   liftIO $ do
-    (w,h) <- TTF.sizeText font str
+    (w,h) <- sizeText font text
     runManaged $ do
-      surface <- managed $ bracket (mkSurface <$> TTF.renderTextBlended font str (Color r g b a)) SDL.freeSurface
+      surface <- managed $ bracket (renderBlended font color text) SDL.freeSurface
       texture <- managed $ bracket (SDL.createTextureFromSurface rndr surface) SDL.destroyTexture
       let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
       SDL.copy rndr texture Nothing rect
   where
-    mkSurface p = SDL.Surface p Nothing
     pos' = fromIntegral <$> pos

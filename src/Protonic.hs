@@ -18,7 +18,7 @@ module Protonic
   -- Render
   , clearBy
   , renderS
-  , testText
+  , printTest
   -- Sprite
   , newFont, freeFont
   , newSprite, freeSprite
@@ -37,5 +37,5 @@ import           Protonic.Core    (Config (..), ProtoT, defaultConfig, frame,
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Metapad, addAction, keyAct,
                                    mousePosAct, newPad)
-import           Protonic.Render  (clearBy, renderS, testText)
+import           Protonic.Render  (clearBy, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

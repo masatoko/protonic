@@ -52,7 +52,7 @@ data ProtoState = ProtoState
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   , frameCount        :: !Integer
-  , sceneTransition   :: Maybe SceneTransition
+  , sceneTransition   :: SceneTransition
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -66,7 +66,7 @@ initialState = ProtoState
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   , frameCount = 0
-  , sceneTransition = Nothing
+  , sceneTransition = Continue
   --
   , actualFPS = 0
   }
@@ -126,7 +126,8 @@ data Scene app a = Scene
   }
 
 data SceneTransition
-  = End
+  = Continue
+  | End
   deriving (Show, Eq)
 
 -- Start game
@@ -137,7 +138,7 @@ runScene proto scene app = do
 
 -- | Finish scene
 end :: ProtoT ()
-end = modify (\a -> a {sceneTransition = Just End})
+end = modify (\a -> a {sceneTransition = End})
 
 --
 mainLoop :: a -> Scene a act -> ProtoT ()
@@ -214,8 +215,8 @@ mainLoop iniApp scene =
     checkSceneTransition :: ProtoT ()
     checkSceneTransition =
       gets sceneTransition >>= \case
-        Nothing  -> return ()
-        Just End -> quit
+        Continue -> return ()
+        End      -> quit
 
 frame :: ProtoT Integer
 frame = gets frameCount

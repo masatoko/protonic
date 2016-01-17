@@ -54,9 +54,7 @@ makeActions es (Metapad fs) =
 
 hold :: SDL.Scancode -> act -> Input -> Maybe act
 hold code act i =
-  if keyState i code
-    then Just act
-    else Nothing
+  boolToMaybe act $ keyState i code
 
 pressed :: SDL.Scancode -> act -> Input -> Maybe act
 pressed code act i =

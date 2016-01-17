@@ -47,12 +47,11 @@ data ProtoConfig = ProtoConfig
   }
 
 data ProtoState = ProtoState
-  { psQuit          :: !Bool
+  { psQuit            :: !Bool
   , cursorRow         :: !Int
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
   , frameCount        :: !Integer
-  , sceneTransition   :: SceneTransition
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -66,7 +65,6 @@ initialState = ProtoState
   , graphFlushedCount = 0
   , graphFlushedTime = 0
   , frameCount = 0
-  , sceneTransition = Continue
   --
   , actualFPS = 0
   }
@@ -116,19 +114,20 @@ withProtonic config go =
 
 -- Scene
 
-type Update app act = [act] -> app -> ProtoT app
+type Update app act = [act] -> app -> ProtoT (Transition app act, app)
 type Render app = app -> ProtoT ()
 
-data Scene app a = Scene
-  { scenePad :: Metapad a
-  , sceneUpdate :: Update app a
+data Scene app act = Scene
+  { scenePad :: Metapad act
+  , sceneUpdate :: Update app act
   , sceneRender :: Render app
   }
 
-data SceneTransition
+data Transition app act
   = Continue
   | End
-  deriving (Show, Eq)
+  | Next (Scene app act)
+  | Push (Scene app act)
 
 -- Start game
 runScene :: Proto -> Scene app act -> app -> IO ()
@@ -136,12 +135,8 @@ runScene proto scene app = do
   _ <- runProtoT proto (mainLoop app scene)
   return ()
 
--- | Finish scene
-end :: ProtoT ()
-end = modify (\a -> a {sceneTransition = End})
-
 --
-mainLoop :: a -> Scene a act -> ProtoT ()
+mainLoop :: app -> Scene app act -> ProtoT ()
 mainLoop iniApp scene =
   loop iniApp =<< SDL.ticks
   where
@@ -154,7 +149,7 @@ mainLoop iniApp scene =
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions pad
-      app' <- update actions app
+      (trans, app') <- update actions app
       -- Rendering
       preRender
       render app'
@@ -165,7 +160,7 @@ mainLoop iniApp scene =
       time' <- wait time
       advance
       -- Scene transition
-      checkSceneTransition
+      transScene trans
       -- Next loop
       q <- gets psQuit
       unless q (loop app' time')
@@ -212,11 +207,11 @@ mainLoop iniApp scene =
            , cursorRow = 0
            }
 
-    checkSceneTransition :: ProtoT ()
-    checkSceneTransition =
-      gets sceneTransition >>= \case
-        Continue -> return ()
-        End      -> quit
+    transScene :: Transition app act -> ProtoT ()
+    transScene Continue = return ()
+    transScene End      = quit
+    transScene (Next _) = return () -- TODO: coding
+    transScene (Push _) = return () -- TODO: coding
 
 frame :: ProtoT Integer
 frame = gets frameCount

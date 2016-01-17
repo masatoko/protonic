@@ -10,7 +10,7 @@ import           Linear.V4
 import qualified SDL
 
 import           Protonic            (Metapad, ProtoT, addAction, newPad,
-                                      runScene, runProtoT, withProtonic, Update, Render, Scene (..))
+                                      runScene, runProtoT, withProtonic, Update, Render, Scene (..), Transition (..))
 import qualified Protonic            as P
 
 data App = App
@@ -46,11 +46,9 @@ titleScene :: Scene App Action
 titleScene = Scene commonPad update render
   where
     update :: Update App Action
-    update as app = do
-      mapM_ work as
-      return app
+    update as app = return (trans, app)
       where
-        work Go = P.end -- TODO: Change to next
+        trans = if Go `elem` as then Next mainScene else Continue
 
     render :: Render App
     render _ = P.testText (V2 100 100) (V4 0 255 255 255) "Press F key to start"
@@ -59,20 +57,20 @@ mainScene :: Scene App Action
 mainScene = Scene commonPad update render
   where
     update :: Update App Action
-    update as = execStateT go
+    update as = runStateT go
       where
-        go :: StateT App ProtoT ()
+        go :: StateT App ProtoT (Transition App Action)
         go = do
           mapM_ count as
-          check
+          trans
 
         count :: Action -> StateT App ProtoT ()
         count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
 
-        check :: StateT App ProtoT ()
-        check = do
+        trans :: StateT App ProtoT (Transition App Action)
+        trans = do
           cnt <- gets appCount
-          when (cnt > 60) $ lift P.end
+          return $ if cnt > 60 then End else Continue
 
     render :: Render App
     render (App s i) = do

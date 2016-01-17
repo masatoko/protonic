@@ -111,16 +111,27 @@ withProtonic config go =
           , SDL.windowInitialSize = fromIntegral <$> winSize conf
           }
 
+-- Scene
+data Scene app a = Scene
+  { scenePad :: Metapad a
+  , sceneUpdate :: [a] -> app -> ProtoT app
+  , sceneRender :: app -> ProtoT ()
+  }
+
 -- Start game
-runGame :: Proto -> ([act] -> a -> ProtoT a) -> (a -> ProtoT ()) -> Metapad act -> a -> IO ()
-runGame proto update render pad app = do
-  _ <- runProtoT proto (mainLoop app pad update render)
+runScene :: Proto -> Scene app act -> app -> IO ()
+runScene proto scene app = do
+  _ <- runProtoT proto (mainLoop app scene)
   return ()
 
-mainLoop :: a -> Metapad act -> ([act] -> a -> ProtoT a) -> (a -> ProtoT ()) -> ProtoT ()
-mainLoop iniApp pad update render =
+mainLoop :: a -> Scene a act -> ProtoT ()
+mainLoop iniApp scene =
   loop iniApp =<< SDL.ticks
   where
+    pad = scenePad scene
+    update = sceneUpdate scene
+    render = sceneRender scene
+    --
     loop app time = do
       -- Update
       events <- SDL.pollEvents

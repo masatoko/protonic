@@ -10,7 +10,7 @@ import           Linear.V4
 import qualified SDL
 
 import           Protonic            (Metapad, ProtoT, addAction, newPad,
-                                      runGame, runProtoT, withProtonic)
+                                      runScene, runProtoT, withProtonic, Scene (..))
 import qualified Protonic            as P
 
 data App = App P.Sprite
@@ -30,20 +30,23 @@ data Action = Go
 main :: IO ()
 main =
   withProtonic conf $ \proto ->
-    bracket (fst <$> runProtoT proto initApp) freeApp $
-      runGame proto update render pad
+    bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
+      runScene proto scene app
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
 
-pad :: Metapad Action
-pad = flip execState newPad $
-  modify . addAction $ P.keyAct SDL.ScancodeF Go
+scene :: Scene App Action
+scene = Scene pad update render
+  where
+    pad :: Metapad Action
+    pad = flip execState newPad $
+      modify . addAction $ P.keyAct SDL.ScancodeF Go
 
-update :: [Action] -> App -> ProtoT App
-update _as app = flip execStateT app $
-  return ()
+    update :: [Action] -> App -> ProtoT App
+    update _as app = flip execStateT app $
+      return ()
 
-render :: App -> ProtoT ()
-render (App s) = do
-  P.clearBy $ V4 0 0 0 255
-  P.renderS s (V2 150 150) Nothing (Just 10)
+    render :: App -> ProtoT ()
+    render (App s) = do
+      P.clearBy $ V4 0 0 0 255
+      P.renderS s (V2 150 150) Nothing (Just 10)

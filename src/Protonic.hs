@@ -3,10 +3,11 @@ module Protonic
     ProtoT
   , runProtoT
   , withProtonic
-  , runGame
+  , runScene
   , Config (..)
   , defaultConfig
   , printsys, printsys'
+  , Scene (..)
   --
   , frame
   -- Data
@@ -29,8 +30,8 @@ module Protonic
   ) where
 
 import           Protonic.Core    (Config (..), ProtoT, defaultConfig, frame,
-                                   printsys, printsys', runGame, runProtoT,
-                                   withProtonic)
+                                   printsys, printsys', runScene, runProtoT,
+                                   withProtonic, Scene (..))
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Metapad, addAction, keyAct,
                                    mousePosAct, newPad)

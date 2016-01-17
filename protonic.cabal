@@ -20,7 +20,6 @@ library
   exposed-modules:     Protonic
                      , Protonic.Data
   other-modules:       Protonic.Core
-                     , Protonic.Scene
                      , Protonic.Render
                      , Protonic.Sprite
                      , Protonic.Metapad
@@ -52,15 +51,3 @@ executable simple
                      , mtl
                      , linear
   default-language:    Haskell2010
-
--- executable proto
---   hs-source-dirs:      app
---   main-is:             Main.hs
---   ghc-options:         -rtsopts -Wall
---   build-depends:       base
---                      , protonic
---                      , sdl2 >= 2
---                      , lens
---                      , mtl
---                      , linear
---   default-language:    Haskell2010

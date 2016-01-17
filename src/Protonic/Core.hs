@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE LambdaCase                 #-}
 
 module Protonic.Core where
 
@@ -207,10 +208,9 @@ mainLoop iniApp scene =
            }
 
     checkSceneTransition :: ProtoT ()
-    checkSceneTransition = do
-      st <- gets sceneTransition
-      case st of
-        Nothing -> return ()
+    checkSceneTransition =
+      gets sceneTransition >>= \case
+        Nothing  -> return ()
         Just End -> quit
 
 frame :: ProtoT Integer

@@ -136,18 +136,14 @@ runScene proto scene app =
 
 --
 mainLoop :: app -> Scene app act -> ProtoT app
-mainLoop iniApp scene = do
-  liftIO . putStrLn $ "Start loop"
-  a <- loop iniApp =<< SDL.ticks
-  liftIO . putStrLn $ "End loop"
-  return a
+mainLoop iniApp scene =
+  loop iniApp =<< SDL.ticks
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     --
     loop app time = do
-      liftIO . putChar $ '.'
       -- Update
       events <- SDL.pollEvents
       procEvents events

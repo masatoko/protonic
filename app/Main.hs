@@ -28,6 +28,9 @@ initApp = do
 freeApp :: App -> IO ()
 freeApp (App s _) = P.freeSprite s
 
+resetApp :: App -> App
+resetApp (App s _) = App s 0
+
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
@@ -47,7 +50,7 @@ titleScene :: Scene App Action
 titleScene = Scene commonPad update render
   where
     update :: Update App Action
-    update as app = return (trans, app)
+    update as app = return (trans, resetApp app)
       where
         trans = if Go `elem` as
                   then Push mainScene

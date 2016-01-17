@@ -61,7 +61,7 @@ titleScene = Scene gamepad update render
                   else Continue
 
     render :: Render App
-    render _ = P.testText (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
+    render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
 mainScene :: Scene App Action
 mainScene = Scene gamepad update render
@@ -100,7 +100,7 @@ pauseScene = Scene gamepad update render
     update :: Update App Action
     update as app = return (if Enter `elem` as then End else Continue, app)
     render :: Render App
-    render _ = P.testText (V2 10 100) (V4 255 255 255 255) "PAUSE"
+    render _ = P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
 clearScene :: Scene App Action
 clearScene = Scene gamepad update render
@@ -108,4 +108,4 @@ clearScene = Scene gamepad update render
     update :: Update App Action
     update as app = return (if Enter `elem` as then Next titleScene else Continue, app)
     render :: Render App
-    render _ = P.testText (V2 10 100) (V4 255 255 255 255) "Congratulation!"
+    render _ = P.printTest (V2 10 100) (V4 255 255 255 255) "Congratulation!"

@@ -113,7 +113,6 @@ withProtonic config go =
           }
 
 -- Scene
-
 type Update app act = [act] -> app -> ProtoT (Transition app act, app)
 type Render app = app -> ProtoT ()
 
@@ -132,15 +131,15 @@ data Transition app act
 -- Start game
 runScene :: Proto -> Scene app act -> app -> IO app
 runScene proto scene app = do
-  (app', trans) <- fst <$> runProtoT proto (mainLoop app scene)
+  (app', trans) <- fst <$> runProtoT proto (sceneLoop app scene)
   case trans of
     Continue -> error "runScene - Continue"
     End      -> return app'
     Next ns  -> runScene proto ns app'
     Push ns  -> runScene proto ns app' >>= runScene proto scene
 --
-mainLoop :: app -> Scene app act -> ProtoT (app, Transition app act)
-mainLoop iniApp scene =
+sceneLoop :: app -> Scene app act -> ProtoT (app, Transition app act)
+sceneLoop iniApp scene =
   loop iniApp =<< SDL.ticks
   where
     pad = scenePad scene

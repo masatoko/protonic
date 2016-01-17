@@ -13,17 +13,20 @@ import           Protonic            (Metapad, ProtoT, addAction, newPad,
                                       runScene, runProtoT, withProtonic, Scene (..))
 import qualified Protonic            as P
 
-data App = App P.Sprite
+data App = App
+  { appSprite :: P.Sprite
+  , appCount :: Int
+  }
 
 initApp :: ProtoT App
 initApp = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
-  return $ App char
+  return $ App char 0
 
 freeApp :: App -> IO ()
-freeApp (App s) = P.freeSprite s
+freeApp (App s _) = P.freeSprite s
 
 data Action = Go
 
@@ -44,11 +47,14 @@ scene = Scene pad update render
 
     update :: [Action] -> App -> ProtoT App
     update as app = flip execStateT app $
-      mapM_ work as
+      mapM_ count as
       where
-        work Go = liftIO . putStrLn $ "Go"
+        count :: Action -> StateT App ProtoT ()
+        count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
 
     render :: App -> ProtoT ()
-    render (App s) = do
+    render (App s i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS s (V2 150 150) Nothing (Just 10)
+      P.printsys "Press F key"
+      P.printsys' $ show i

@@ -115,10 +115,14 @@ withProtonic config go =
           }
 
 -- Scene
+
+type Update app act = [act] -> app -> ProtoT app
+type Render app = app -> ProtoT ()
+
 data Scene app a = Scene
   { scenePad :: Metapad a
-  , sceneUpdate :: [a] -> app -> ProtoT app
-  , sceneRender :: app -> ProtoT ()
+  , sceneUpdate :: Update app a
+  , sceneRender :: Render app
   }
 
 data SceneTransition

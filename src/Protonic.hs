@@ -4,6 +4,7 @@ module Protonic
   , runProtoT
   , withProtonic
   , runScene
+  , Update, Render
   , Config (..)
   , defaultConfig
   , printsys, printsys'
@@ -32,7 +33,7 @@ module Protonic
 
 import           Protonic.Core    (Config (..), ProtoT, defaultConfig, frame,
                                    printsys, printsys', runScene, runProtoT,
-                                   withProtonic, Scene (..), end)
+                                   withProtonic, Update, Render, Scene (..), end)
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Metapad, addAction, keyAct,
                                    mousePosAct, newPad)

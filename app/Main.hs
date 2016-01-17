@@ -10,7 +10,7 @@ import           Linear.V4
 import qualified SDL
 
 import           Protonic            (Metapad, ProtoT, addAction, newPad,
-                                      runScene, runProtoT, withProtonic, Scene (..))
+                                      runScene, runProtoT, withProtonic, Update, Render, Scene (..))
 import qualified Protonic            as P
 
 data App = App
@@ -28,24 +28,34 @@ initApp = do
 freeApp :: App -> IO ()
 freeApp (App s _) = P.freeSprite s
 
-data Action = Go
 
 main :: IO ()
 main =
   withProtonic conf $ \proto ->
     bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
-      runScene proto scene app
+      runScene proto mainScene app
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
 
-scene :: Scene App Action
-scene = Scene pad update render
-  where
-    pad :: Metapad Action
-    pad = flip execState newPad $
-      modify . addAction $ P.keyAct SDL.ScancodeF Go
+data Action = Go
 
-    update :: [Action] -> App -> ProtoT App
+pad :: Metapad Action
+pad = flip execState newPad $
+  modify . addAction $ P.keyAct SDL.ScancodeF Go
+
+titleScene :: Scene App Action
+titleScene = Scene pad update render
+  where
+    update :: Update App Action
+    update = undefined
+
+    render :: Render App
+    render = undefined
+
+mainScene :: Scene App Action
+mainScene = Scene pad update render
+  where
+    update :: Update App Action
     update as = execStateT go
       where
         go :: StateT App ProtoT ()
@@ -61,7 +71,7 @@ scene = Scene pad update render
           cnt <- gets appCount
           when (cnt > 60) $ lift P.end
 
-    render :: App -> ProtoT ()
+    render :: Render App
     render (App s i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS s (V2 150 150) Nothing (Just 10)

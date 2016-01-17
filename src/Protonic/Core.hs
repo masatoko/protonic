@@ -14,6 +14,7 @@ import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4
+import           System.Exit             (exitSuccess)
 -- import           System.Directory        (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
@@ -247,8 +248,6 @@ procEvents :: [SDL.Event] -> ProtoT ()
 procEvents = mapM_ (work . SDL.eventPayload)
   where
     work :: SDL.EventPayload -> ProtoT ()
-    -- work (SDL.WindowClosedEvent _) = quitApp
-    work  SDL.QuitEvent            = quitApp
+    work (SDL.WindowClosedEvent _) = liftIO exitSuccess
+    work SDL.QuitEvent             = liftIO exitSuccess
     work _ = return ()
-
-    quitApp = error "quit" -- TODO: Temporaly

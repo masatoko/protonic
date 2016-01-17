@@ -55,7 +55,7 @@ titleScene :: Scene App Action
 titleScene = Scene gamepad update render
   where
     update :: Update App Action
-    update as app = return (trans, resetApp app)
+    update _ as app = return (trans, resetApp app)
       where
         trans = if Enter `elem` as
                   then Next mainScene
@@ -68,7 +68,7 @@ mainScene :: Scene App Action
 mainScene = Scene gamepad update render
   where
     update :: Update App Action
-    update as = runStateT go
+    update _ as = runStateT go
       where
         go :: StateT App ProtoT (Transition App Action)
         go = do
@@ -99,7 +99,7 @@ pauseScene :: Scene App Action
 pauseScene = Scene gamepad update render
   where
     update :: Update App Action
-    update as app = return (if Enter `elem` as then End else Continue, app)
+    update _ as app = return (if Enter `elem` as then End else Continue, app)
     render :: Render App
     render _ = do
       P.clearBy $ V4 50 50 0 255
@@ -109,7 +109,7 @@ clearScene :: Scene App Action
 clearScene = Scene gamepad update render
   where
     update :: Update App Action
-    update as app = return (if Enter `elem` as then Next titleScene else Continue, app)
+    update _ as app = return (if Enter `elem` as then Next titleScene else Continue, app)
     render :: Render App
     render _ = do
       P.clearBy $ V4 0 0 255 255

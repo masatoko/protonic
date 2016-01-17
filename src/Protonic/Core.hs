@@ -51,7 +51,6 @@ data ProtoState = ProtoState
     cursorRow         :: !Int
   , graphFlushedCount :: !Int
   , graphFlushedTime  :: !Time
-  , frameCount        :: !Integer
   --
   , actualFPS         :: !Int
   } deriving Show
@@ -64,7 +63,6 @@ initialState = ProtoState
     cursorRow = 0
   , graphFlushedCount = 0
   , graphFlushedTime = 0
-  , frameCount = 0
   --
   , actualFPS = 0
   }
@@ -113,7 +111,7 @@ withProtonic config go =
           }
 
 -- Scene
-type Update g a = [a] -> g -> ProtoT (Transition g a, g)
+type Update g a = SceneState -> [a] -> g -> ProtoT (Transition g a, g)
 type Render g = g -> ProtoT ()
 
 data Scene g a = Scene
@@ -121,6 +119,11 @@ data Scene g a = Scene
   , sceneUpdate :: Update g a
   , sceneRender :: Render g
   }
+
+data SceneState = SceneState
+  { frameCount :: Integer }
+
+iniSceneState = SceneState 0
 
 data Transition g a
   = Continue
@@ -130,41 +133,45 @@ data Transition g a
 
 -- Start scene
 runScene :: Proto -> Scene g a -> g -> IO g
-runScene proto scene game = do
-  (game', trans) <- fst <$> runProtoT proto (sceneLoop game scene)
+runScene = runS iniSceneState
+
+runS :: SceneState -> Proto -> Scene g a -> g -> IO g
+runS stt proto scene game = do
+  (game', stt', trans) <- fst <$> runProtoT proto (sceneLoop game stt scene)
   case trans of
-    Continue -> error "runScene - Continue"
+    Continue -> error "runS - Continue"
     End      -> return game'
     Next ns  -> runScene proto ns game'
-    Push ns  -> runScene proto ns game' >>= runScene proto scene
+    Push ns  -> runScene proto ns game' >>= runS stt' proto scene
 
-sceneLoop :: g -> Scene g a -> ProtoT (g, Transition g a)
-sceneLoop iniApp scene =
-  loop iniApp =<< SDL.ticks
+sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
+sceneLoop iniGame iniState scene =
+  loop iniGame iniState =<< SDL.ticks
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     --
-    loop game time = do
+    loop game stt time = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions events pad
-      (trans, game') <- update actions game
+      (trans, game') <- update stt actions game
       -- Rendering
       preRender
       render game'
       updateFPS
-      printFPS
+      printSystem stt
       SDL.present =<< asks renderer
       -- Advance Proto
       time' <- wait time
       advance
+      let stt' = advanceScene stt
       -- Next loop
       case trans of
-        Continue -> loop game' time'
-        _        -> return (game', trans)
+        Continue -> loop game' stt' time'
+        _        -> return (game', stt', trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -194,22 +201,19 @@ sceneLoop iniApp scene =
         modify (\s -> s {graphFlushedTime = curT})
         modify (\s -> s {graphFlushedCount = 0})
 
-    printFPS :: ProtoT ()
-    printFPS = do
+    printSystem :: SceneState -> ProtoT ()
+    printSystem stt = do
       p <- asks debugPrintSystem
       when p $ do
         printsys' =<< (("FPS:" ++) . show) <$> gets actualFPS
-        printsys' =<< (("Frame:" ++) . show) <$> gets frameCount
+        printsys' . ("Frame:" ++) . show . frameCount $ stt
 
     advance :: ProtoT ()
-    advance = modify $ \s -> let
-      f = frameCount s
-      in s { frameCount = f + 1
-           , cursorRow = 0
-           }
+    advance = modify $ \s -> s { cursorRow = 0 }
 
-frame :: ProtoT Integer
-frame = gets frameCount
+    advanceScene :: SceneState -> SceneState
+    advanceScene s = s {frameCount = c + 1}
+      where c = frameCount s
 
 printsys :: Text -> ProtoT ()
 printsys text = do

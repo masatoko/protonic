@@ -27,7 +27,7 @@ module Protonic
   , newPad
   , addAction
   , Input
-  , keyAct
+  , hold
   , mousePosAct
   ) where
 
@@ -35,7 +35,7 @@ import           Protonic.Core    (Config (..), ProtoT, defaultConfig, frame,
                                    printsys, printsys', runScene, runProtoT,
                                    withProtonic, Update, Render, Scene (..), Transition (..))
 import           Protonic.Data    (Font, Sprite)
-import           Protonic.Metapad (Input, Metapad, addAction, keyAct,
+import           Protonic.Metapad (Input, Metapad, addAction, hold,
                                    mousePosAct, newPad)
 import           Protonic.Render  (clearBy, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

@@ -47,8 +47,8 @@ data Action
 
 gamepad :: Metapad Action
 gamepad = flip execState newPad $ do
-  modify . addAction $ P.keyAct SDL.ScancodeF Go
-  modify . addAction $ P.keyAct SDL.ScancodeReturn Enter
+  modify . addAction $ P.hold SDL.ScancodeF Go
+  modify . addAction $ P.hold SDL.ScancodeReturn Enter
 
 titleScene :: Scene App Action
 titleScene = Scene gamepad update render

@@ -50,6 +50,7 @@ data ProtoConfig = ProtoConfig
 data ProtoState = ProtoState
   {
     cursorRow    :: !Int
+  , messages     :: [Text]
   , updatedCount :: !Int
   , updatedTime  :: !Time
   --
@@ -62,6 +63,7 @@ initialState :: ProtoState
 initialState = ProtoState
   {
     cursorRow = 0
+  , messages = []
   , updatedCount = 0
   , updatedTime = 0
   --
@@ -163,7 +165,8 @@ sceneLoop iniG iniS scene =
       preRender
       render g'
       updateFPS
-      printSystem s
+      printSystemState s
+      printMessages
       SDL.present =<< asks renderer
       -- Advance Proto
       t' <- wait t
@@ -202,8 +205,8 @@ sceneLoop iniG iniS scene =
                          , updatedCount = 0
                          }
 
-    printSystem :: SceneState -> ProtoT ()
-    printSystem stt = do
+    printSystemState :: SceneState -> ProtoT ()
+    printSystemState stt = do
       p <- asks debugPrintSystem
       when p $ do
         printsys' =<< (("FPS:" ++) . show) <$> gets actualFPS
@@ -216,21 +219,25 @@ sceneLoop iniG iniS scene =
     advanceScene s = s {frameCount = c + 1}
       where c = frameCount s
 
+    printMessages :: ProtoT ()
+    printMessages = do
+      font <- asks systemFont
+      r <- asks renderer
+      ts <- gets messages
+      modify $ \s -> s {messages = []} -- Clear messages
+      foldM_ (work r font) 0 ts
+      where
+        work r font y text = liftIO $ do
+          (w,h) <- sizeText font text
+          runManaged $ do
+            surface <- managed $ bracket (renderBlended font (V4 0 255 0 255) text) SDL.freeSurface
+            texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
+            let rect = Just $ SDL.Rectangle (P (V2 0 y)) (fromIntegral <$> V2 w h)
+            SDL.copy r texture Nothing rect
+          return $ y + fromIntegral h
+
 printsys :: Text -> ProtoT ()
-printsys text = do
-  font <- asks systemFont
-  r <- asks renderer
-  pos <- mkPos <$> gets cursorRow <*> asks fontSize
-  modify (\s -> let i = cursorRow s in s {cursorRow = i + 1})
-  liftIO $ do
-    (w,h) <- sizeText font text
-    runManaged $ do
-      surface <- managed $ bracket (renderBlended font (V4 0 255 0 255) text) SDL.freeSurface
-      texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
-      let rect = Just $ SDL.Rectangle (P pos) (fromIntegral <$> V2 w h)
-      SDL.copy r texture Nothing rect
-  where
-    mkPos row size = fromIntegral <$> V2 0 (row * size)
+printsys text = modify $ \s -> let ms = messages s in s {messages = text:ms}
 
 printsys' :: String -> ProtoT ()
 printsys' = printsys . T.pack

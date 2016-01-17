@@ -57,7 +57,7 @@ titleScene = Scene gamepad update render
     update as app = return (trans, resetApp app)
       where
         trans = if Enter `elem` as
-                  then Push mainScene
+                  then Next mainScene
                   else Continue
 
     render :: Render App
@@ -81,7 +81,9 @@ mainScene = Scene gamepad update render
         trans :: StateT App ProtoT (Transition App Action)
         trans = do
           cnt <- gets appCount
-          return $ if cnt > 60 then End else Continue
+          return $ if cnt > 60
+                     then Next titleScene
+                     else Continue
 
     render :: Render App
     render (App s i) = do

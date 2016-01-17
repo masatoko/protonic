@@ -131,11 +131,15 @@ data Transition app act
 
 -- Start game
 runScene :: Proto -> Scene app act -> app -> IO app
-runScene proto scene app =
-  fst <$> runProtoT proto (mainLoop app scene)
-
+runScene proto scene app = do
+  (app', trans) <- fst <$> runProtoT proto (mainLoop app scene)
+  case trans of
+    Continue -> error "runScene - Continue"
+    End      -> return app'
+    Next ns  -> runScene proto ns app'
+    Push ns  -> runScene proto ns app' >>= runScene proto scene
 --
-mainLoop :: app -> Scene app act -> ProtoT app
+mainLoop :: app -> Scene app act -> ProtoT (app, Transition app act)
 mainLoop iniApp scene =
   loop iniApp =<< SDL.ticks
   where
@@ -158,12 +162,10 @@ mainLoop iniApp scene =
       -- Advance Proto
       time' <- wait time
       advance
-      -- Scene transition
-      (quit, app'') <- transScene trans app'
       -- Next loop
-      if quit
-        then return app''
-        else loop app'' time'
+      case trans of
+        Continue -> loop app' time'
+        _        -> return (app', trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -207,15 +209,6 @@ mainLoop iniApp scene =
            , cursorRow = 0
            }
 
-    transScene :: Transition app act -> app -> ProtoT (Bool, app)
-    transScene Continue a = return (False, a)
-    transScene End      a = return (True, a)
-    transScene (Next _) a = return (False, a) -- TODO: coding
-    transScene (Push s) a = do
-      a' <- mainLoop a s
-      liftIO . putStrLn $ "Restart"
-      return (False, a')
-
 frame :: ProtoT Integer
 frame = gets frameCount
 
@@ -256,6 +249,3 @@ procEvents = mapM_ (work . SDL.eventPayload)
     work _ = return ()
 
     quitApp = error "quit" -- TODO: Temporaly
-
--- quitScene :: ProtoT ()
--- quitScene = modify (\s -> s {psQuit = True})

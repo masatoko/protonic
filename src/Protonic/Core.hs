@@ -113,32 +113,32 @@ withProtonic config go =
           }
 
 -- Scene
-type Update app act = [act] -> app -> ProtoT (Transition app act, app)
-type Render app = app -> ProtoT ()
+type Update g a = [a] -> g -> ProtoT (Transition g a, g)
+type Render g = g -> ProtoT ()
 
-data Scene app act = Scene
-  { scenePad :: Metapad act
-  , sceneUpdate :: Update app act
-  , sceneRender :: Render app
+data Scene g a = Scene
+  { scenePad :: Metapad a
+  , sceneUpdate :: Update g a
+  , sceneRender :: Render g
   }
 
-data Transition app act
+data Transition g a
   = Continue
   | End
-  | Next (Scene app act)
-  | Push (Scene app act)
+  | Next (Scene g a)
+  | Push (Scene g a)
 
--- Start game
-runScene :: Proto -> Scene app act -> app -> IO app
-runScene proto scene app = do
-  (app', trans) <- fst <$> runProtoT proto (sceneLoop app scene)
+-- Start scene
+runScene :: Proto -> Scene g a -> g -> IO g
+runScene proto scene game = do
+  (game', trans) <- fst <$> runProtoT proto (sceneLoop game scene)
   case trans of
     Continue -> error "runScene - Continue"
-    End      -> return app'
-    Next ns  -> runScene proto ns app'
-    Push ns  -> runScene proto ns app' >>= runScene proto scene
---
-sceneLoop :: app -> Scene app act -> ProtoT (app, Transition app act)
+    End      -> return game'
+    Next ns  -> runScene proto ns game'
+    Push ns  -> runScene proto ns game' >>= runScene proto scene
+
+sceneLoop :: g -> Scene g a -> ProtoT (g, Transition g a)
 sceneLoop iniApp scene =
   loop iniApp =<< SDL.ticks
   where
@@ -146,15 +146,15 @@ sceneLoop iniApp scene =
     update = sceneUpdate scene
     render = sceneRender scene
     --
-    loop app time = do
+    loop game time = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions events pad
-      (trans, app') <- update actions app
+      (trans, game') <- update actions game
       -- Rendering
       preRender
-      render app'
+      render game'
       updateFPS
       printFPS
       SDL.present =<< asks renderer
@@ -163,8 +163,8 @@ sceneLoop iniApp scene =
       advance
       -- Next loop
       case trans of
-        Continue -> loop app' time'
-        _        -> return (app', trans)
+        Continue -> loop game' time'
+        _        -> return (game', trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT Time
@@ -230,7 +230,7 @@ printsys text = do
 printsys' :: String -> ProtoT ()
 printsys' = printsys . T.pack
 
--- |Open font after check if font file exists
+-- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do
   -- p <- doesFileExist str
@@ -238,7 +238,7 @@ openFont str size = do
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 
--- |Process events about system
+-- | Process events about system
 procEvents :: [SDL.Event] -> ProtoT ()
 procEvents = mapM_ (work . SDL.eventPayload)
   where

@@ -61,7 +61,7 @@ titleScene = Scene gamepad update render
                   else Continue
 
     render :: Render App
-    render _ = P.testText (V2 20 100) (V4 0 255 255 255) "Press Enter key to start"
+    render _ = P.testText (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
 mainScene :: Scene App Action
 mainScene = Scene gamepad update render
@@ -82,7 +82,7 @@ mainScene = Scene gamepad update render
         trans = work <$> gets appCount
           where
             work cnt
-              | cnt > 60        = Next titleScene -- TODO: Change to clearScene
+              | cnt > 60        = Next clearScene
               | Enter `elem` as = Push pauseScene
               | otherwise       = Continue
 
@@ -100,4 +100,12 @@ pauseScene = Scene gamepad update render
     update :: Update App Action
     update as app = return (if Enter `elem` as then End else Continue, app)
     render :: Render App
-    render _ = P.testText (V2 10 10) (V4 255 255 255 255) "PAUSE"
+    render _ = P.testText (V2 10 100) (V4 255 255 255 255) "PAUSE"
+
+clearScene :: Scene App Action
+clearScene = Scene gamepad update render
+  where
+    update :: Update App Action
+    update as app = return (if Enter `elem` as then Next titleScene else Continue, app)
+    render :: Render App
+    render _ = P.testText (V2 10 100) (V4 255 255 255 255) "Congratulation!"

@@ -56,11 +56,10 @@ titleScene :: Scene Game Action
 titleScene = Scene gamepad update render
   where
     update :: Update Game Action
-    update _ as g = return (trans, g)
-      where
-        trans = if Enter `elem` as
-                  then Next mainScene $ resetApp g
-                  else Continue
+    update _ as g = return $
+      if Enter `elem` as
+        then (Next mainScene, resetApp g)
+        else (Continue, g)
 
     render :: Render Game
     render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
@@ -69,12 +68,10 @@ mainScene :: Scene Game Action
 mainScene = Scene gamepad update render
   where
     update :: Update Game Action
-    update _ as g = runStateT go g
+    update _ as = runStateT go
       where
         go :: StateT Game IO (Transition Game Action)
-        go = do
-          mapM_ count as
-          trans
+        go = mapM_ count as >> trans
 
         count :: Action -> StateT Game IO ()
         count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
@@ -84,8 +81,8 @@ mainScene = Scene gamepad update render
         trans = work <$> gets gCount
           where
             work cnt
-              | cnt > 60        = Next (clearScene cnt) g
-              | Enter `elem` as = Push pauseScene g
+              | cnt > 60        = Next (clearScene cnt)
+              | Enter `elem` as = Push pauseScene
               | otherwise       = Continue
 
     render :: Render Game
@@ -110,7 +107,7 @@ clearScene :: Int -> Scene Game Action
 clearScene score = Scene gamepad update render
   where
     update :: Update Game Action
-    update _ as g = return (if Enter `elem` as then Next titleScene g else Continue, g)
+    update _ as g = return (if Enter `elem` as then Next titleScene else Continue, g)
     render :: Render Game
     render _ = do
       P.clearBy $ V4 0 0 255 255

@@ -36,9 +36,6 @@ freeApp g = liftIO $ do
   P.freeSprite . gSprite $ g
   putStrLn "free Game"
 
-resetApp :: Game -> Game
-resetApp (Game s _ _) = Game s 0 0
-
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
@@ -78,9 +75,7 @@ mainScene = Scene gamepad update render transit
     update stt as = execStateT go
       where
         go :: StateT Game ProtoT ()
-        go = do
-          mapM_ count as
-          setDeg
+        go = mapM_ count as >> setDeg
 
         count :: Action -> StateT Game ProtoT ()
         count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
@@ -108,19 +103,27 @@ pauseScene :: Scene Game Action
 pauseScene = Scene gamepad update render transit
   where
     update _ _ = return
-    render :: Render Game
+
     render _ = do
       P.clearBy $ V4 50 50 0 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
-    transit as _ = return $ if Enter `elem` as then P.end else P.continue
+
+    transit as _ = return $
+      if Enter `elem` as
+        then P.end
+        else P.continue
 
 clearScene :: Int -> Scene Game Action
 clearScene score = Scene gamepad update render transit
   where
     update _ _ = return
-    render :: Render Game
+
     render _ = do
       P.clearBy $ V4 0 0 255 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
       P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
-    transit as _ = return $ if Enter `elem` as then P.next titleScene Title else P.continue
+
+    transit as _ = return $
+      if Enter `elem` as
+        then P.next titleScene Title
+        else P.continue

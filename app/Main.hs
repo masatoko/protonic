@@ -75,12 +75,14 @@ mainScene = Scene gamepad update render
         go :: StateT Game IO (Transition Game Action)
         go = do
           mapM_ count as
-          modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
+          setDeg
           trans
 
         count :: Action -> StateT Game IO ()
         count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
         count _  = return ()
+
+        setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
         trans :: StateT Game IO (Transition Game Action)
         trans = work <$> gets gCount

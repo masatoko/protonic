@@ -128,23 +128,23 @@ data SceneState = SceneState
 data Transition g a
   = Continue
   | End
-  | Next (Scene g a)
-  | Push (Scene g a)
+  | Next (Scene g a) g
+  | Push (Scene g a) g
 
 -- Start scene
 runScene :: Proto -> Scene g a -> g -> IO g
-runScene = runS iniSceneState
+runScene = go iniSceneState
   where
     iniSceneState = SceneState 0
     --
-    runS :: SceneState -> Proto -> Scene g a -> g -> IO g
-    runS s proto scene g = do
+    go :: SceneState -> Proto -> Scene g a -> g -> IO g
+    go s proto scene g = do
       (g', s', trans) <- fst <$> runProtoT proto (sceneLoop g s scene)
       case trans of
-        Continue -> error "runS - Continue"
+        Continue -> error "runScene - Continue"
         End      -> return g'
-        Next ns  -> runScene proto ns g'
-        Push ns  -> runScene proto ns g' >>= runS s' proto scene
+        Next ns g2 -> runScene proto ns g2
+        Push ns g2 -> runScene proto ns g2 >> go s' proto scene g'
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
 sceneLoop iniG iniS scene =

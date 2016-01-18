@@ -15,29 +15,29 @@ import           Protonic            (Metapad, ProtoT, Render, Scene (..),
                                       newPad, runProtoT, runScene, withProtonic)
 import qualified Protonic            as P
 
-data App = App
-  { appSprite :: P.Sprite
-  , appCount  :: Int
+data Game = Game
+  { gSprite :: P.Sprite
+  , gCount  :: Int
   }
 
-initApp :: ProtoT App
-initApp = do
+initGame :: ProtoT Game
+initGame = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
-  return $ App char 0
+  return $ Game char 0
 
-freeApp :: App -> IO ()
-freeApp (App s _) = P.freeSprite s
+freeApp :: Game -> IO ()
+freeApp (Game s _) = P.freeSprite s
 
-resetApp :: App -> App
-resetApp (App s _) = App s 0
+resetApp :: Game -> Game
+resetApp (Game s _) = Game s 0
 
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
-    _ <- bracket (fst <$> runProtoT proto initApp) freeApp $ \app ->
-      runScene proto titleScene app
+    _ <- bracket (fst <$> runProtoT proto initGame) freeApp $
+      runScene proto titleScene
     return ()
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
@@ -52,66 +52,66 @@ gamepad = flip execState newPad $ do
   modify . addAction $ P.hold SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
 
-titleScene :: Scene App Action
+titleScene :: Scene Game Action
 titleScene = Scene gamepad update render
   where
-    update :: Update App Action
-    update _ as app = return (trans, resetApp app)
+    update :: Update Game Action
+    update _ as g = return (trans, g)
       where
         trans = if Enter `elem` as
-                  then Next mainScene
+                  then Next mainScene $ resetApp g
                   else Continue
 
-    render :: Render App
+    render :: Render Game
     render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
-mainScene :: Scene App Action
+mainScene :: Scene Game Action
 mainScene = Scene gamepad update render
   where
-    update :: Update App Action
-    update _ as = runStateT go
+    update :: Update Game Action
+    update _ as g = runStateT go g
       where
-        go :: StateT App IO (Transition App Action)
+        go :: StateT Game IO (Transition Game Action)
         go = do
           mapM_ count as
           trans
 
-        count :: Action -> StateT App IO ()
-        count Go = modify (\a -> let c = appCount a in a {appCount = c + 1})
+        count :: Action -> StateT Game IO ()
+        count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
         count _  = return ()
 
-        trans :: StateT App IO (Transition App Action)
-        trans = work <$> gets appCount
+        trans :: StateT Game IO (Transition Game Action)
+        trans = work <$> gets gCount
           where
             work cnt
-              | cnt > 60        = Next clearScene
-              | Enter `elem` as = Push pauseScene
+              | cnt > 60        = Next clearScene g
+              | Enter `elem` as = Push pauseScene g
               | otherwise       = Continue
 
-    render :: Render App
-    render (App s i) = do
+    render :: Render Game
+    render (Game s i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS s (V2 150 150) Nothing (Just 10)
       P.printsys "Press Enter key to pause"
       P.printsys "Press F key"
       P.printsys $ T.pack $ show i ++ " / 60"
 
-pauseScene :: Scene App Action
+pauseScene :: Scene Game Action
 pauseScene = Scene gamepad update render
   where
-    update :: Update App Action
-    update _ as app = return (if Enter `elem` as then End else Continue, app)
-    render :: Render App
+    update :: Update Game Action
+    update _ as g = return (if Enter `elem` as then End else Continue, g)
+    render :: Render Game
     render _ = do
       P.clearBy $ V4 50 50 0 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
-clearScene :: Scene App Action
+clearScene :: Scene Game Action
 clearScene = Scene gamepad update render
   where
-    update :: Update App Action
-    update _ as app = return (if Enter `elem` as then Next titleScene else Continue, app)
-    render :: Render App
+    update :: Update Game Action
+    update _ as g = return (if Enter `elem` as then Next titleScene g else Continue, g)
+    render :: Render Game
     render _ = do
       P.clearBy $ V4 0 0 255 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"

@@ -4,7 +4,6 @@
 
 module Protonic.Core where
 
-import           Control.Concurrent      (forkIO)
 import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
@@ -16,7 +15,7 @@ import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4
 import           System.Exit             (exitSuccess)
-import           System.Directory        (doesFileExist)
+-- import           System.Directory        (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
@@ -113,7 +112,7 @@ withProtonic config go =
           }
 
 -- Scene
-type Update g a = SceneState -> [a] -> g -> IO (Transition g a, g)
+type Update g a = SceneState -> [a] -> g -> IO (Transition, g)
 type Render g = g -> ProtoT ()
 
 data Scene g a = Scene
@@ -125,28 +124,38 @@ data Scene g a = Scene
 data SceneState = SceneState
   { frameCount :: Integer }
 
-data Transition g a
+data Transition
   = Continue
   | End
-  | Next (Scene g a)
-  | Push (Scene g a)
+  | Next (() -> ProtoT ())
+  | Push (() -> ProtoT ())
+
+continue :: Transition
+continue = Continue
+
+end :: Transition
+end = End
+
+next :: Scene g a -> g -> Transition
+next s g = Next (\_ -> runScene s g)
+
+push :: Scene g a -> g -> Transition
+push s g = Push (\_ -> runScene s g)
 
 -- Start scene
-runScene :: Proto -> Scene g a -> g -> IO g
-runScene proto scene0 g0 = fst <$> runProtoT proto (go0 scene0 g0)
+runScene :: Scene g a -> g -> ProtoT ()
+runScene = go (SceneState 0)
   where
-    go0 = go (SceneState 0)
-    --
-    go :: SceneState -> Scene g a -> g -> ProtoT g
+    go :: SceneState -> Scene g a -> g -> ProtoT ()
     go s scene g = do
       (g', s', trans) <- sceneLoop g s scene
       case trans of
         Continue -> error "runScene - Continue"
-        End      -> return g'
-        Next ns  -> go0 ns g'
-        Push ns  -> go0 ns g' >>= go s' scene
+        End      -> return ()
+        Next f   -> f ()
+        Push f   -> f () >> go s' scene g'
 
-sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
+sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition)
 sceneLoop iniG iniS scene =
   loop iniG iniS =<< SDL.ticks
   where
@@ -242,7 +251,8 @@ printsys text = modify $ \s -> let ms = messages s in s {messages = text:ms}
 -- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do
-  p <- doesFileExist str
+  -- p <- doesFileExist str
+  let p = True
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 

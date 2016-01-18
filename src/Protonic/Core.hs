@@ -112,13 +112,15 @@ withProtonic config go =
           }
 
 -- Scene
-type Update g a = SceneState -> [a] -> g -> IO (Transition, g)
+type Update g a = SceneState -> [a] -> g -> ProtoT g
 type Render g = g -> ProtoT ()
+type Transit g a = [a] -> g -> ProtoT Transition
 
 data Scene g a = Scene
-  { scenePad    :: Metapad a
-  , sceneUpdate :: Update g a
-  , sceneRender :: Render g
+  { scenePad     :: Metapad a
+  , sceneUpdate  :: Update g a
+  , sceneRender  :: Render g
+  , sceneTransit :: Transit g a
   }
 
 data SceneState = SceneState
@@ -162,13 +164,14 @@ sceneLoop iniG iniS scene =
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
+    transit = sceneTransit scene
     --
     loop g s t = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
       actions <- makeActions events pad
-      (trans, g') <- liftIO $ update s actions g
+      g' <- update s actions g
       -- Rendering
       preRender
       render g'
@@ -176,6 +179,8 @@ sceneLoop iniG iniS scene =
       printSystemState s
       printMessages
       SDL.present =<< asks renderer
+      -- Transition
+      trans <- transit actions g
       -- Advance State
       wait t
       t' <- SDL.ticks

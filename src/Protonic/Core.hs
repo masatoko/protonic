@@ -133,18 +133,18 @@ data Transition g a
 
 -- Start scene
 runScene :: Proto -> Scene g a -> g -> IO g
-runScene = go iniSceneState
+runScene proto scene0 g0 = fst <$> runProtoT proto (go0 scene0 g0)
   where
-    iniSceneState = SceneState 0
+    go0 = go (SceneState 0)
     --
-    go :: SceneState -> Proto -> Scene g a -> g -> IO g
-    go s proto scene g = do
-      (g', s', trans) <- fst <$> runProtoT proto (sceneLoop g s scene)
+    go :: SceneState -> Scene g a -> g -> ProtoT g
+    go s scene g = do
+      (g', s', trans) <- sceneLoop g s scene
       case trans of
         Continue -> error "runScene - Continue"
         End      -> return g'
-        Next ns  -> runScene proto ns g'
-        Push ns  -> runScene proto ns g' >>= go s' proto scene
+        Next ns  -> go0 ns g'
+        Push ns  -> go0 ns g' >>= go s' scene
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g a)
 sceneLoop iniG iniS scene =

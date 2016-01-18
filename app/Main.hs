@@ -11,13 +11,15 @@ import           Linear.V4
 import qualified SDL
 
 import           Protonic            (Metapad, ProtoT, Render, Scene (..),
-                                      Transition (..), Update, addAction,
-                                      newPad, runProtoT, runScene, withProtonic)
+                                      SceneState (..), Transition (..), Update,
+                                      addAction, newPad, runProtoT, runScene,
+                                      withProtonic)
 import qualified Protonic            as P
 
 data Game = Game
   { gSprite :: P.Sprite
-  , gCount  :: Int
+  , gDeg    :: !Double
+  , gCount  :: !Int
   }
 
 initGame :: ProtoT Game
@@ -25,13 +27,13 @@ initGame = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
-  return $ Game char 0
+  return $ Game char 0 0
 
 freeApp :: Game -> IO ()
-freeApp (Game s _) = P.freeSprite s
+freeApp = P.freeSprite . gSprite
 
 resetApp :: Game -> Game
-resetApp (Game s _) = Game s 0
+resetApp (Game s _ _) = Game s 0 0
 
 main :: IO ()
 main =
@@ -68,10 +70,13 @@ mainScene :: Scene Game Action
 mainScene = Scene gamepad update render
   where
     update :: Update Game Action
-    update _ as = runStateT go
+    update stt as = runStateT go
       where
         go :: StateT Game IO (Transition Game Action)
-        go = mapM_ count as >> trans
+        go = do
+          mapM_ count as
+          modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
+          trans
 
         count :: Action -> StateT Game IO ()
         count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
@@ -81,17 +86,18 @@ mainScene = Scene gamepad update render
         trans = work <$> gets gCount
           where
             work cnt
-              | cnt > 60        = Next (clearScene cnt)
+              | cnt > 30        = Next (clearScene cnt)
               | Enter `elem` as = Push pauseScene
               | otherwise       = Continue
 
     render :: Render Game
-    render (Game s i) = do
+    render (Game s d i) = do
       P.clearBy $ V4 0 0 0 255
-      P.renderS s (V2 150 150) Nothing (Just 10)
-      P.printsys "Press Enter key to pause"
-      P.printsys "Press F key"
-      P.printsys $ T.pack $ show i ++ " / 60"
+      P.renderS s (V2 150 150) Nothing (Just d)
+      P.printTest (V2 10 100) (V4 255 255 255 255) "Press Enter key to pause"
+      P.printTest (V2 10 120) (V4 255 255 255 255) "Press F key!"
+      let progress = replicate i '>' ++ replicate (30 - i) '-'
+      P.printTest (V2 10 140) (V4 255 255 255 255) $ T.pack progress
 
 pauseScene :: Scene Game Action
 pauseScene = Scene gamepad update render

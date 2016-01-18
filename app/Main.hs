@@ -84,7 +84,7 @@ mainScene = Scene gamepad update render
         trans = work <$> gets gCount
           where
             work cnt
-              | cnt > 60        = Next clearScene g
+              | cnt > 60        = Next (clearScene cnt) g
               | Enter `elem` as = Push pauseScene g
               | otherwise       = Continue
 
@@ -106,8 +106,8 @@ pauseScene = Scene gamepad update render
       P.clearBy $ V4 50 50 0 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
-clearScene :: Scene Game Action
-clearScene = Scene gamepad update render
+clearScene :: Int -> Scene Game Action
+clearScene score = Scene gamepad update render
   where
     update :: Update Game Action
     update _ as g = return (if Enter `elem` as then Next titleScene g else Continue, g)
@@ -115,3 +115,4 @@ clearScene = Scene gamepad update render
     render _ = do
       P.clearBy $ V4 0 0 255 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
+      P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)

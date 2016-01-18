@@ -8,8 +8,10 @@ module Protonic
   , Config (..)
   , defaultConfig
   , printsys
-  , Scene (..), SceneState (..)
-  , Transition (..)
+  , Scene (..)
+  , SceneState (..)
+  , Transition
+  , continue, end, next, push
   -- Data
   , Font
   , Sprite
@@ -29,8 +31,9 @@ module Protonic
   , mousePosAct
   ) where
 
-import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..), SceneState (..),
-                                   Transition (..), Update, defaultConfig,
+import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..), SceneState (..), Transition,
+                                   continue, end, next, push,
+                                   Update, defaultConfig,
                                    printsys, runProtoT,
                                    runScene, withProtonic)
 import           Protonic.Data    (Font, Sprite)

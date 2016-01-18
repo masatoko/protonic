@@ -16,7 +16,7 @@ import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4
 import           System.Exit             (exitSuccess)
--- import           System.Directory        (doesFileExist)
+import           System.Directory        (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
@@ -242,8 +242,7 @@ printsys text = modify $ \s -> let ms = messages s in s {messages = text:ms}
 -- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont
 openFont str size = do
-  -- p <- doesFileExist str
-  let p = True
+  p <- doesFileExist str
   unless p $ throwIO $ userError $ "Missing font file: " ++ str
   TTF.openFont str size
 

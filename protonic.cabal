@@ -38,6 +38,7 @@ library
                      , managed
                      , linear
                      , directory
+                     , safe
   c-sources:           csrc/ttf_helper.c
   default-language:    Haskell2010
 

@@ -31,8 +31,8 @@ initGame = do
   liftIO . putStrLn $ "init Game"
   return $ Game char 0 0
 
-freeApp :: MonadIO m => Game -> m ()
-freeApp g = liftIO $ do
+freeGame :: MonadIO m => Game -> m ()
+freeGame g = liftIO $ do
   P.freeSprite . gSprite $ g
   putStrLn "free Game"
 
@@ -65,7 +65,7 @@ titleScene = Scene gamepad update render transit
     render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
     transit as _ = if Enter `elem` as
-                     then P.next mainScene <$> initGame
+                     then P.nextNew mainScene <$> initGame
                      else return P.continue
 
 mainScene :: Scene Game Action
@@ -95,8 +95,8 @@ mainScene = Scene gamepad update render transit
     transit as g = work (gCount g)
       where
         work cnt
-          | cnt > 30        = freeApp g >> return (P.next (clearScene cnt) g)
-          | Enter `elem` as = return $ P.push pauseScene g
+          | cnt > 30        = return $ P.next (clearScene cnt)
+          | Enter `elem` as = return $ P.push pauseScene
           | otherwise       = return P.continue
 
 pauseScene :: Scene Game Action
@@ -123,7 +123,9 @@ clearScene score = Scene gamepad update render transit
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
       P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
 
-    transit as _ = return $
+    transit as g =
       if Enter `elem` as
-        then P.next titleScene Title
-        else P.continue
+        then do
+          freeGame g
+          return $ P.nextNew titleScene Title
+        else return P.continue

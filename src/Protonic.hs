@@ -11,7 +11,7 @@ module Protonic
   , Scene (..)
   , SceneState (..)
   , Transition
-  , continue, end, next, push
+  , continue, end, nextNew, next, pushNew, push
   -- Data
   , Font
   , Sprite
@@ -32,7 +32,7 @@ module Protonic
   ) where
 
 import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..), SceneState (..), Transition,
-                                   continue, end, next, push,
+                                   continue, end, nextNew, next, pushNew, push,
                                    Update, defaultConfig,
                                    printsys, runProtoT,
                                    runScene, withProtonic)

@@ -133,23 +133,23 @@ data Transition g
   | PushNew (() -> ProtoT ())
   | Push (g -> ProtoT g)
 
-continue :: Maybe (Transition g)
-continue = Nothing
+continue :: Monad m => m (Maybe (Transition g))
+continue = return Nothing
 
-end :: Maybe (Transition g)
-end = Just End
+end :: Monad m => m (Maybe (Transition g))
+end = return $ Just End
 
-nextNew :: Scene g a -> g -> Maybe (Transition g0)
-nextNew s g = Just $ NextNew (\_ -> void (runScene s g))
+nextNew :: Monad m => Scene g a -> g -> m (Maybe (Transition g0))
+nextNew s g = return . Just $ NextNew (\_ -> void (runScene s g))
 
-next :: Scene g a -> Maybe (Transition g)
-next s = Just $ Next (runScene s)
+next :: Monad m => Scene g a -> m (Maybe (Transition g))
+next s = return . Just $ Next (runScene s)
 
-pushNew :: Scene g a -> g -> Maybe (Transition g0)
-pushNew s g = Just $ PushNew (\_ -> void (runScene s g))
+pushNew :: Monad m => Scene g a -> g -> m (Maybe (Transition g0))
+pushNew s g = return . Just $ PushNew (\_ -> void (runScene s g))
 
-push :: Scene g a -> Maybe (Transition g)
-push s = Just $ Push (runScene s)
+push :: Monad m => Scene g a -> m (Maybe (Transition g))
+push s = return . Just $ Push (runScene s)
 
 -- Start scene
 runScene :: Scene g a -> g -> ProtoT g

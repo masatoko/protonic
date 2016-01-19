@@ -147,6 +147,7 @@ joyAxis joy@(Joy _ jid) axis make i =
   where
     work = axisValue joy axis
 
+-- TODO: One of axes -> fire ... (not simultaneously)
 joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> Maybe act
 joyAxis2 joy a0 a1 make i =
   make <$> (headMay . mapMaybe (work a0) . joyAxes $ i)

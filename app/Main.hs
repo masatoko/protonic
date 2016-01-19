@@ -12,7 +12,7 @@ import qualified SDL
 import           Protonic            (Metapad, ProtoT, Render, Scene (..),
                                       SceneState (..), Update,
                                       addAction, newPad, runProtoT, runScene,
-                                      withProtonic)
+                                      withProtonic, Joystick)
 import qualified Protonic            as P
 
 data Title = Title
@@ -39,8 +39,11 @@ freeGame g = liftIO $ do
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
-    _ <- runProtoT proto $
-      runScene titleScene Title
+    P.withJoystickAt 0 $ \joy -> do
+      let gamepad = mkGamepad joy
+      _ <- runProtoT proto $
+        runScene (titleScene gamepad) Title
+      return ()
     return ()
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
@@ -51,14 +54,17 @@ data Action
   | Exit
   deriving (Eq, Show)
 
-gamepad :: Metapad Action
-gamepad = flip execState newPad $ do
-  modify . addAction $ P.hold SDL.ScancodeF Go
+mkGamepad :: Joystick -> Metapad Action
+mkGamepad joy = flip execState newPad $ do
+  -- Keyboard
+  modify . addAction $ P.pressed SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
+  -- Joystick
+  modify . addAction $ P.joyPressed joy 0 Go
 
-titleScene :: Scene Title Action
-titleScene = Scene gamepad update render transit
+titleScene :: Metapad Action -> Scene Title Action
+titleScene pad = Scene pad update render transit
   where
     update :: Update Title Action
     update _ _ = return
@@ -69,12 +75,12 @@ titleScene = Scene gamepad update render transit
       P.printTest (V2 10 120) (V4 0 255 255 255) "Escape - exit"
 
     transit as _
-      | Enter `elem` as = P.nextNew mainScene =<< initGame
+      | Enter `elem` as = P.nextNew (mainScene pad) =<< initGame
       | Exit `elem` as  = P.end
       | otherwise       = P.continue
 
-mainScene :: Scene Game Action
-mainScene = Scene gamepad update render transit
+mainScene :: Metapad Action -> Scene Game Action
+mainScene pad = Scene pad update render transit
   where
     update :: Update Game Action
     update stt as = execStateT go
@@ -94,18 +100,20 @@ mainScene = Scene gamepad update render transit
       P.renderS s (V2 150 150) Nothing (Just d)
       P.printTest (V2 10 100) (V4 255 255 255 255) "Press Enter key to pause"
       P.printTest (V2 10 120) (V4 255 255 255 255) "Press F key!"
-      let progress = replicate i '>' ++ replicate (30 - i) '-'
+      let progress = replicate i '>' ++ replicate (targetCount - i) '-'
       P.printTest (V2 10 140) (V4 255 255 255 255) $ T.pack progress
 
     transit as g
-      | cnt > 30        = P.next (clearScene cnt)
-      | Enter `elem` as = P.push pauseScene
-      | otherwise       = P.continue
+      | cnt > targetCount = P.next (clearScene cnt pad)
+      | Enter `elem` as   = P.push (pauseScene pad)
+      | otherwise         = P.continue
       where
         cnt = gCount g
 
-pauseScene :: Scene Game Action
-pauseScene = Scene gamepad update render transit
+    targetCount = 5 :: Int
+
+pauseScene :: Metapad Action -> Scene Game Action
+pauseScene pad = Scene pad update render transit
   where
     update _ _ = return
 
@@ -117,8 +125,8 @@ pauseScene = Scene gamepad update render transit
       | Enter `elem` as = P.end
       | otherwise       = P.continue
 
-clearScene :: Int -> Scene Game Action
-clearScene score = Scene gamepad update render transit
+clearScene :: Int -> Metapad Action -> Scene Game Action
+clearScene score pad = Scene pad update render transit
   where
     update _ _ = return
 
@@ -131,5 +139,5 @@ clearScene score = Scene gamepad update render transit
     transit as g
       | Enter `elem` as = do
           freeGame g
-          P.nextNew titleScene Title
+          P.nextNew (titleScene pad) Title
       | otherwise       = P.continue

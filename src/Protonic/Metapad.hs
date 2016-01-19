@@ -1,7 +1,14 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Protonic.Metapad where
 
+import           Control.Exception      (bracket, throwIO)
+import           Control.Monad          (when, (<=<))
 import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Data.Int               (Int32)
+import           Data.Word (Word8)
 import           Data.Maybe             (mapMaybe)
+import qualified Data.Vector            as V
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2
@@ -14,6 +21,7 @@ data Input = Input
   { keyboard     :: [SDL.KeyboardEventData]
   , mouseMotion  :: [SDL.MouseMotionEventData]
   , mouseButton  :: [SDL.MouseButtonEventData]
+  , joyButton   :: [SDL.JoyButtonEventData]
   , modState     :: SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -22,21 +30,25 @@ data Input = Input
 
 snapshotInput :: MonadIO m => [SDL.Event] -> m Input
 snapshotInput es =
-  Input (mapMaybe kb es')
-        (mapMaybe mm es')
-        (mapMaybe mb es')
+  Input (sel kb) (sel mm) (sel mb)
+        (sel cb)
         <$> SDL.getModState
         <*> SDL.getKeyboardState
         <*> SDL.getAbsoluteMouseLocation
         <*> SDL.getMouseButtons
   where
     es' = map SDL.eventPayload es
+    sel f = mapMaybe f es'
+    --
     kb (SDL.KeyboardEvent d) = Just d
     kb _ = Nothing
     mm (SDL.MouseMotionEvent d) = Just d
     mm _ = Nothing
     mb (SDL.MouseButtonEvent d) = Just d
     mb _ = Nothing
+    --
+    cb (SDL.JoyButtonEvent d) = Just d
+    cb _ = Nothing
 
 newPad :: Metapad a
 newPad = Metapad []
@@ -74,6 +86,38 @@ isTargetKey code motion e =
 mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
 mousePosAct f i = Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
+
+-- Joystick
+
+type JoystickID = Int32
+
+data Joystick = Joy SDL.Joystick JoystickID
+  deriving (Eq, Show)
+
+makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
+makeJoystick j = Joy j <$> SDL.getJoystickID j
+
+withJoystickAt :: MonadIO m => Int -> (Joystick -> IO a) -> m a
+withJoystickAt i f = do
+  ds <- SDL.availableJoysticks
+  liftIO $ case ds V.!? i of
+    Nothing  -> throwIO $ userError $ "no joystick at" ++ show i
+    Just dev -> bracket (SDL.openJoystick dev)
+                        (liftIO . SDL.closeJoystick)
+                        (f <=< makeJoystick)
+
+joyPressed :: Joystick -> Word8 -> act -> Input -> Maybe act
+joyPressed joy button act i =
+  boolToMaybe act $ any (isTargetButton joy button 0) $ joyButton i
+
+isTargetButton :: Joystick -> Word8 -> Word8 -> SDL.JoyButtonEventData -> Bool
+isTargetButton (Joy _ jid) button state e =
+  let isId = SDL.joyButtonEventWhich e == jid
+      isButton = SDL.joyButtonEventButton e == button
+      isState = SDL.joyButtonEventState e == state
+  in isId && isButton && isState
+
+-- Utility
 
 boolToMaybe :: a -> Bool -> Maybe a
 boolToMaybe a p = if p then Just a else Nothing

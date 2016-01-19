@@ -29,6 +29,9 @@ module Protonic
   , Input
   , hold, pressed, released
   , mousePosAct
+  , Joystick
+  , withJoystickAt
+  , joyPressed
   ) where
 
 import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..), SceneState (..), Transition,
@@ -38,6 +41,6 @@ import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..), Scen
                                    runScene, withProtonic)
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Metapad, addAction, hold, mousePosAct,
-                                   newPad, pressed, released)
+                                   newPad, pressed, released, Joystick, withJoystickAt, joyPressed)
 import           Protonic.Render  (clearBy, printTest, renderS)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

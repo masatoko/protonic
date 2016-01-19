@@ -71,12 +71,13 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
   -- Joystick
   case mjs of
-    Just js -> do
-      modify . addAction $ P.joyPressed js 10 Go
-      modify . addAction $ P.joyPressed js 11 Go
-      modify . addAction $ P.joyPressed js 12 Go
-      modify . addAction $ P.joyPressed js 13 Go
-      modify . addAction $ P.joyPressed js 4 Enter
+    Just js ->
+      -- Buttons
+      mapM_ (modify . addAction . uncurry (P.joyPressed js))
+        [ (10, Go), (11, Go), (12, Go), (13, Go)
+        , (4, Enter)
+        ]
+
     Nothing -> return ()
 
 titleScene :: Metapad Action -> Scene Title Action

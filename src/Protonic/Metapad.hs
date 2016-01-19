@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE LambdaCase         #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Protonic.Metapad where
 
@@ -7,7 +6,6 @@ import qualified Control.Exception      as E
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (mapMaybe)
-import           Data.Typeable
 import qualified Data.Vector            as V
 import           Data.Word              (Word8)
 import           Foreign.C.Types        (CInt)
@@ -95,21 +93,15 @@ type JoystickID = Int32
 data Joystick = Joy SDL.Joystick JoystickID
   deriving (Eq, Show)
 
-data JoystickException
-  = JoystickMissingException Int
-  deriving (Show, Typeable)
-
-instance E.Exception JoystickException
-
 makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
 makeJoystick j = Joy j <$> SDL.getJoystickID j
 
-newJoystickAt :: MonadIO m => Int -> m Joystick
+newJoystickAt :: MonadIO m => Int -> m (Maybe Joystick)
 newJoystickAt i = do
   ds <- SDL.availableJoysticks
   liftIO $ case ds V.!? i of
-    Nothing  -> E.throwIO $ JoystickMissingException i
-    Just dev -> SDL.openJoystick dev >>= makeJoystick
+    Nothing  -> return Nothing
+    Just dev -> Just <$> (makeJoystick =<< SDL.openJoystick dev)
 
 freeJoystick :: MonadIO m => Joystick -> m ()
 freeJoystick (Joy j _) = SDL.closeJoystick j

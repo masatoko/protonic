@@ -276,4 +276,6 @@ procEvents = mapM_ (work . SDL.eventPayload)
     work :: SDL.EventPayload -> ProtoT ()
     work (SDL.WindowClosedEvent _) = liftIO exitSuccess
     work SDL.QuitEvent             = liftIO exitSuccess
+    -- work (SDL.JoyButtonEvent d)    = liftIO . print $ d
+    -- work (SDL.JoyAxisEvent d)      = liftIO . print $ d
     work _ = return ()

@@ -142,7 +142,7 @@ isTargetButton (Joy _ jid) button state e =
   in isId && isButton && isState
 
 joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> Maybe act
-joyAxis joy@(Joy _ jid) axis make i =
+joyAxis joy axis make i =
   fmap make . headMay . mapMaybe work . joyAxes $ i
   where
     work = axisValue joy axis
@@ -155,6 +155,7 @@ joyAxis2 joy a0 a1 make i =
   where
     work = axisValue joy
 
+axisValue :: Joystick -> Word8 -> SDL.JoyAxisEventData -> Maybe Int16
 axisValue (Joy _ jid) axis (SDL.JoyAxisEventData jid' axis' v) =
   if jid == jid' && axis == axis' then Just v else Nothing
 

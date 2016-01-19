@@ -64,7 +64,9 @@ titleScene = Scene gamepad update render transit
     update _ _ = return
 
     render :: Render Title
-    render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
+    render _ = do
+      P.printTest (V2 10 100) (V4 0 255 255 255) "Enter - start"
+      P.printTest (V2 10 120) (V4 0 255 255 255) "Escape - exit"
 
     transit as _
       | Enter `elem` as = P.nextNew mainScene =<< initGame
@@ -124,6 +126,7 @@ clearScene score = Scene gamepad update render transit
       P.clearBy $ V4 0 0 255 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
       P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
+      P.printTest (V2 10 140) (V4 255 255 255 255) "Enter - title"
 
     transit as g
       | Enter `elem` as = do

@@ -48,12 +48,14 @@ main =
 data Action
   = Go
   | Enter
+  | Exit
   deriving (Eq, Show)
 
 gamepad :: Metapad Action
 gamepad = flip execState newPad $ do
   modify . addAction $ P.hold SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
+  modify . addAction $ P.pressed SDL.ScancodeEscape Exit
 
 titleScene :: Scene Title Action
 titleScene = Scene gamepad update render transit
@@ -64,9 +66,10 @@ titleScene = Scene gamepad update render transit
     render :: Render Title
     render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
-    transit as _ = if Enter `elem` as
-                     then P.nextNew mainScene <$> initGame
-                     else return P.continue
+    transit as _
+      | Enter `elem` as = P.nextNew mainScene <$> initGame
+      | Exit `elem` as  = return P.end
+      | otherwise       = return P.continue
 
 mainScene :: Scene Game Action
 mainScene = Scene gamepad update render transit
@@ -108,10 +111,9 @@ pauseScene = Scene gamepad update render transit
       P.clearBy $ V4 50 50 0 255
       P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
-    transit as _ = return $
-      if Enter `elem` as
-        then P.end
-        else P.continue
+    transit as _
+      | Enter `elem` as = return P.end
+      | otherwise       = return P.continue
 
 clearScene :: Int -> Scene Game Action
 clearScene score = Scene gamepad update render transit
@@ -123,9 +125,8 @@ clearScene score = Scene gamepad update render transit
       P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
       P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
 
-    transit as g =
-      if Enter `elem` as
-        then do
+    transit as g
+      | Enter `elem` as = do
           freeGame g
           return $ P.nextNew titleScene Title
-        else return P.continue
+      | otherwise       = return P.continue

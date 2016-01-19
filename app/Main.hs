@@ -2,7 +2,7 @@
 
 module Main where
 
-import Control.Exception (catch)
+import           Control.Exception   (catch)
 import           Control.Monad.State
 import qualified Data.Text           as T
 import           Linear.V2
@@ -10,10 +10,10 @@ import           Linear.V4
 
 import qualified SDL
 
-import           Protonic            (Metapad, ProtoT, Render, Scene (..),
-                                      SceneState (..), Update,
+import           Protonic            (Joystick, Metapad, ProtoT, Render,
+                                      Scene (..), SceneState (..), Update,
                                       addAction, newPad, runProtoT, runScene,
-                                      withProtonic, Joystick)
+                                      withProtonic)
 import qualified Protonic            as P
 
 data Title = Title
@@ -50,6 +50,15 @@ main =
     conf = P.defaultConfig {P.winSize = V2 300 300}
     jsHandler :: P.JoystickException -> IO (Maybe Joystick)
     jsHandler e = print e >> return Nothing
+
+    -- monitor mjs =
+    --   case mjs of
+    --     Nothing -> return ()
+    --     Just js -> forever $ do
+    --       clearScreen
+    --       SDL.pumpEvents
+    --       P.monitorJoystick js
+    --       threadDelay 100000
 
 data Action
   = Go

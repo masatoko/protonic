@@ -5,7 +5,7 @@ module Protonic.Metapad where
 
 import qualified Control.Exception      as E
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import           Data.Int               (Int32)
+import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (mapMaybe)
 import           Data.Typeable
 import qualified Data.Vector            as V
@@ -113,6 +113,24 @@ newJoystickAt i = do
 
 freeJoystick :: MonadIO m => Joystick -> m ()
 freeJoystick (Joy j _) = SDL.closeJoystick j
+
+-- for test
+monitorJoystick :: Joystick -> IO ()
+monitorJoystick (Joy j _) = do
+  n <- fromIntegral <$> SDL.numAxes j
+  mapM_ work $ take n [0..]
+  where
+    work i = (putStrLn . prog i) =<< SDL.axisPosition j i
+
+    norm :: Int16 -> Double
+    norm v = fromIntegral v / 32768
+
+    prog :: CInt -> Int16 -> String
+    prog i a =
+      let v =  norm a
+          deg = truncate $ (v + 1) * 10
+          p = take 20 $ replicate deg '*' ++ repeat '-'
+      in show i ++ ": " ++ p ++ " ... " ++ show v
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> Maybe act
 joyPressed joy button act i =

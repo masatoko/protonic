@@ -31,7 +31,6 @@ module Protonic
   , mousePosAct
   , Joystick
   , monitorJoystick
-  , JoystickException (..)
   , newJoystickAt, freeJoystick
   , joyPressed
   ) where
@@ -42,7 +41,7 @@ import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..),
                                    printsys, push, pushNew, runProtoT, runScene,
                                    withProtonic)
 import           Protonic.Data    (Font, Sprite)
-import           Protonic.Metapad (Input, Joystick, JoystickException (..),
+import           Protonic.Metapad (Input, Joystick,
                                    Metapad, addAction, freeJoystick, hold,
                                    joyPressed, monitorJoystick, mousePosAct,
                                    newJoystickAt, newPad, pressed, released)

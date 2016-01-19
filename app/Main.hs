@@ -2,7 +2,6 @@
 
 module Main where
 
-import           Control.Exception   (catch)
 import           Control.Monad.State
 import qualified Data.Text           as T
 import           Linear.V2
@@ -40,7 +39,7 @@ freeGame g = liftIO $ do
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
-    mjs <- (Just <$> P.newJoystickAt 0) `catch` jsHandler
+    mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $
       runScene (titleScene gamepad) Title
@@ -48,8 +47,6 @@ main =
     return ()
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
-    jsHandler :: P.JoystickException -> IO (Maybe Joystick)
-    jsHandler e = print e >> return Nothing
 
     -- monitor mjs =
     --   case mjs of

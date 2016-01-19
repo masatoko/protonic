@@ -114,7 +114,7 @@ withProtonic config go =
 -- Scene
 type Update g a = SceneState -> [a] -> g -> ProtoT g
 type Render g = g -> ProtoT ()
-type Transit g a = [a] -> g -> ProtoT Transition
+type Transit g a = [a] -> g -> ProtoT (Maybe (Transition g))
 
 data Scene g a = Scene
   { scenePad     :: Metapad a
@@ -126,38 +126,46 @@ data Scene g a = Scene
 data SceneState = SceneState
   { frameCount :: Integer }
 
-data Transition
-  = Continue
-  | End
-  | Next (() -> ProtoT ())
-  | Push (() -> ProtoT ())
+data Transition g
+  = End
+  | NextNew (() -> ProtoT ())
+  | Next (g -> ProtoT g)
+  | PushNew (() -> ProtoT ())
+  | Push (g -> ProtoT g)
 
-continue :: Transition
-continue = Continue
+continue :: Maybe (Transition g)
+continue = Nothing
 
-end :: Transition
-end = End
+end :: Maybe (Transition g)
+end = Just End
 
-next :: Scene g a -> g -> Transition
-next s g = Next (\_ -> runScene s g)
+nextNew :: Scene g a -> g -> Maybe (Transition g0)
+nextNew s g = Just $ NextNew (\_ -> void (runScene s g))
 
-push :: Scene g a -> g -> Transition
-push s g = Push (\_ -> runScene s g)
+next :: Scene g a -> Maybe (Transition g)
+next s = Just $ Next (runScene s)
+
+pushNew :: Scene g a -> g -> Maybe (Transition g0)
+pushNew s g = Just $ PushNew (\_ -> void (runScene s g))
+
+push :: Scene g a -> Maybe (Transition g)
+push s = Just $ Push (runScene s)
 
 -- Start scene
-runScene :: Scene g a -> g -> ProtoT ()
+runScene :: Scene g a -> g -> ProtoT g
 runScene = go (SceneState 0)
   where
-    go :: SceneState -> Scene g a -> g -> ProtoT ()
+    go :: SceneState -> Scene g a -> g -> ProtoT g
     go s scene g = do
       (g', s', trans) <- sceneLoop g s scene
       case trans of
-        Continue -> error "runScene - Continue"
-        End      -> return ()
-        Next f   -> f ()
-        Push f   -> f () >> go s' scene g'
+        End          -> return g'
+        Next exec    -> exec g'
+        NextNew exec -> exec () >> return g'
+        Push exec    -> exec g' >>= go s' scene
+        PushNew exec -> exec () >> go s' scene g'
 
-sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition)
+sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g)
 sceneLoop iniG iniS scene =
   loop iniG iniS =<< SDL.ticks
   where
@@ -180,15 +188,15 @@ sceneLoop iniG iniS scene =
       printMessages
       SDL.present =<< asks renderer
       -- Transition
-      trans <- transit actions g
+      mTrans <- transit actions g
       -- Advance State
       wait t
       t' <- SDL.ticks
       let s' = advance s
       -- Go next loop
-      case trans of
-        Continue -> loop g' s' t'
-        _        -> return (g', s', trans)
+      case mTrans of
+        Nothing    -> loop g' s' t'
+        Just trans -> return (g', s', trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT ()

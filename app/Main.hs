@@ -2,6 +2,7 @@
 
 module Main where
 
+import Control.Exception (catch)
 import           Control.Monad.State
 import qualified Data.Text           as T
 import           Linear.V2
@@ -39,14 +40,16 @@ freeGame g = liftIO $ do
 main :: IO ()
 main =
   withProtonic conf $ \proto -> do
-    P.withJoystickAt 0 $ \joy -> do
-      let gamepad = mkGamepad joy
-      _ <- runProtoT proto $
-        runScene (titleScene gamepad) Title
-      return ()
+    mjs <- (Just <$> P.newJoystickAt 0) `catch` jsHandler
+    let gamepad = mkGamepad mjs
+    _ <- runProtoT proto $
+      runScene (titleScene gamepad) Title
+    maybe (return ()) P.freeJoystick mjs
     return ()
   where
     conf = P.defaultConfig {P.winSize = V2 300 300}
+    jsHandler :: P.JoystickException -> IO (Maybe Joystick)
+    jsHandler e = print e >> return Nothing
 
 data Action
   = Go
@@ -54,14 +57,16 @@ data Action
   | Exit
   deriving (Eq, Show)
 
-mkGamepad :: Joystick -> Metapad Action
-mkGamepad joy = flip execState newPad $ do
+mkGamepad :: Maybe Joystick -> Metapad Action
+mkGamepad mjs = flip execState newPad $ do
   -- Keyboard
   modify . addAction $ P.pressed SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
   -- Joystick
-  modify . addAction $ P.joyPressed joy 0 Go
+  case mjs of
+    Just js -> modify . addAction $ P.joyPressed js 0 Go
+    Nothing -> return ()
 
 titleScene :: Metapad Action -> Scene Title Action
 titleScene pad = Scene pad update render transit

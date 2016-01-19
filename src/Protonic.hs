@@ -32,7 +32,7 @@ module Protonic
   , Joystick
   , monitorJoystick
   , newJoystickAt, freeJoystick
-  , joyPressed
+  , joyPressed, joyAxis, joyAxis2
   ) where
 
 import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..),
@@ -43,7 +43,7 @@ import           Protonic.Core    (Config (..), ProtoT, Render, Scene (..),
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Joystick,
                                    Metapad, addAction, freeJoystick, hold,
-                                   joyPressed, monitorJoystick, mousePosAct,
+                                   joyPressed, joyAxis, joyAxis2, monitorJoystick, mousePosAct,
                                    newJoystickAt, newPad, pressed, released)
 import           Protonic.Render  (clearBy, printTest, renderS)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

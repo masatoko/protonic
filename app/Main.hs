@@ -3,6 +3,7 @@
 module Main where
 
 import           Control.Monad.State
+import           Data.Int            (Int16)
 import qualified Data.Text           as T
 import           Linear.V2
 import           Linear.V4
@@ -61,6 +62,7 @@ data Action
   = Go
   | Enter
   | Exit
+  | AxisLeft Int16 Int16
   deriving (Eq, Show)
 
 mkGamepad :: Maybe Joystick -> Metapad Action
@@ -71,12 +73,14 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
   -- Joystick
   case mjs of
-    Just js ->
+    Just js -> do
       -- Buttons
       mapM_ (modify . addAction . uncurry (P.joyPressed js))
         [ (10, Go), (11, Go), (12, Go), (13, Go)
         , (4, Enter)
         ]
+      -- Axes
+      modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
 
     Nothing -> return ()
 
@@ -84,7 +88,12 @@ titleScene :: Metapad Action -> Scene Title Action
 titleScene pad = Scene pad update render transit
   where
     update :: Update Title Action
-    update _ _ = return
+    update _ as t = do
+      mapM_ work as
+      return t
+      where
+        work (AxisLeft x y) = liftIO $ print (x,y)
+        work _              = return ()
 
     render :: Render Title
     render _ = do

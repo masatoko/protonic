@@ -2,7 +2,6 @@
 
 module Protonic.Metapad where
 
-import qualified Control.Exception      as E
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (mapMaybe)
@@ -11,6 +10,7 @@ import           Data.Word              (Word8)
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2
+import           Safe                   (headMay)
 
 import qualified SDL
 
@@ -20,7 +20,8 @@ data Input = Input
   { keyboard     :: [SDL.KeyboardEventData]
   , mouseMotion  :: [SDL.MouseMotionEventData]
   , mouseButton  :: [SDL.MouseButtonEventData]
-  , joyButton    :: [SDL.JoyButtonEventData]
+  , joyButtons   :: [SDL.JoyButtonEventData]
+  , joyAxes      :: [SDL.JoyAxisEventData]
   , modState     :: SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -30,7 +31,7 @@ data Input = Input
 snapshotInput :: MonadIO m => [SDL.Event] -> m Input
 snapshotInput es =
   Input (sel kb) (sel mm) (sel mb)
-        (sel cb)
+        (sel jb) (sel ja)
         <$> SDL.getModState
         <*> SDL.getKeyboardState
         <*> SDL.getAbsoluteMouseLocation
@@ -38,16 +39,19 @@ snapshotInput es =
   where
     es' = map SDL.eventPayload es
     sel f = mapMaybe f es'
-    --
+    -- Keyboard
     kb (SDL.KeyboardEvent d) = Just d
     kb _ = Nothing
     mm (SDL.MouseMotionEvent d) = Just d
     mm _ = Nothing
     mb (SDL.MouseButtonEvent d) = Just d
     mb _ = Nothing
-    --
-    cb (SDL.JoyButtonEvent d) = Just d
-    cb _ = Nothing
+    -- Joystick
+    jb (SDL.JoyButtonEvent d) = Just d
+    jb _ = Nothing
+    ja (SDL.JoyAxisEvent d) = Just d
+    ja _ = Nothing
+
 
 newPad :: Metapad a
 newPad = Metapad []
@@ -81,6 +85,8 @@ isTargetKey code motion e =
       notRep = not (SDL.keyboardEventRepeat e)
       isPressed = SDL.keyboardEventKeyMotion e == motion
   in notRep && isCode && isPressed
+
+-- Mouse
 
 mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
 mousePosAct f i = Just . f $ fromIntegral <$> pos
@@ -126,7 +132,7 @@ monitorJoystick (Joy j _) = do
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> Maybe act
 joyPressed joy button act i =
-  boolToMaybe act $ any (isTargetButton joy button 0) $ joyButton i
+  boolToMaybe act $ any (isTargetButton joy button 0) $ joyButtons i
 
 isTargetButton :: Joystick -> Word8 -> Word8 -> SDL.JoyButtonEventData -> Bool
 isTargetButton (Joy _ jid) button state e =
@@ -134,6 +140,22 @@ isTargetButton (Joy _ jid) button state e =
       isButton = SDL.joyButtonEventButton e == button
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
+
+joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> Maybe act
+joyAxis joy@(Joy _ jid) axis make i =
+  fmap make . headMay . mapMaybe work . joyAxes $ i
+  where
+    work = axisValue joy axis
+
+joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> Maybe act
+joyAxis2 joy a0 a1 make i =
+  make <$> (headMay . mapMaybe (work a0) . joyAxes $ i)
+       <*> (headMay . mapMaybe (work a1) . joyAxes $ i)
+  where
+    work = axisValue joy
+
+axisValue (Joy _ jid) axis (SDL.JoyAxisEventData jid' axis' v) =
+  if jid == jid' && axis == axis' then Just v else Nothing
 
 -- Utility
 

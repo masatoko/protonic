@@ -67,9 +67,9 @@ titleScene = Scene gamepad update render transit
     render _ = P.printTest (V2 10 100) (V4 0 255 255 255) "Press Enter key to start"
 
     transit as _
-      | Enter `elem` as = P.nextNew mainScene <$> initGame
-      | Exit `elem` as  = return P.end
-      | otherwise       = return P.continue
+      | Enter `elem` as = P.nextNew mainScene =<< initGame
+      | Exit `elem` as  = P.end
+      | otherwise       = P.continue
 
 mainScene :: Scene Game Action
 mainScene = Scene gamepad update render transit
@@ -95,12 +95,12 @@ mainScene = Scene gamepad update render transit
       let progress = replicate i '>' ++ replicate (30 - i) '-'
       P.printTest (V2 10 140) (V4 255 255 255 255) $ T.pack progress
 
-    transit as g = work (gCount g)
+    transit as g
+      | cnt > 30        = P.next (clearScene cnt)
+      | Enter `elem` as = P.push pauseScene
+      | otherwise       = P.continue
       where
-        work cnt
-          | cnt > 30        = return $ P.next (clearScene cnt)
-          | Enter `elem` as = return $ P.push pauseScene
-          | otherwise       = return P.continue
+        cnt = gCount g
 
 pauseScene :: Scene Game Action
 pauseScene = Scene gamepad update render transit
@@ -112,8 +112,8 @@ pauseScene = Scene gamepad update render transit
       P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
 
     transit as _
-      | Enter `elem` as = return P.end
-      | otherwise       = return P.continue
+      | Enter `elem` as = P.end
+      | otherwise       = P.continue
 
 clearScene :: Int -> Scene Game Action
 clearScene score = Scene gamepad update render transit
@@ -128,5 +128,5 @@ clearScene score = Scene gamepad update render transit
     transit as g
       | Enter `elem` as = do
           freeGame g
-          return $ P.nextNew titleScene Title
-      | otherwise       = return P.continue
+          P.nextNew titleScene Title
+      | otherwise       = P.continue

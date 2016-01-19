@@ -1,14 +1,15 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE LambdaCase         #-}
 
 module Protonic.Metapad where
 
-import           Control.Exception      (bracket, throwIO)
-import           Control.Monad          (when, (<=<))
+import qualified Control.Exception      as E
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int32)
-import           Data.Word (Word8)
 import           Data.Maybe             (mapMaybe)
+import           Data.Typeable
 import qualified Data.Vector            as V
+import           Data.Word              (Word8)
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2
@@ -21,7 +22,7 @@ data Input = Input
   { keyboard     :: [SDL.KeyboardEventData]
   , mouseMotion  :: [SDL.MouseMotionEventData]
   , mouseButton  :: [SDL.MouseButtonEventData]
-  , joyButton   :: [SDL.JoyButtonEventData]
+  , joyButton    :: [SDL.JoyButtonEventData]
   , modState     :: SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -94,17 +95,24 @@ type JoystickID = Int32
 data Joystick = Joy SDL.Joystick JoystickID
   deriving (Eq, Show)
 
+data JoystickException
+  = JoystickMissingException Int
+  deriving (Show, Typeable)
+
+instance E.Exception JoystickException
+
 makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
 makeJoystick j = Joy j <$> SDL.getJoystickID j
 
-withJoystickAt :: MonadIO m => Int -> (Joystick -> IO a) -> m a
-withJoystickAt i f = do
+newJoystickAt :: MonadIO m => Int -> m Joystick
+newJoystickAt i = do
   ds <- SDL.availableJoysticks
   liftIO $ case ds V.!? i of
-    Nothing  -> throwIO $ userError $ "no joystick at" ++ show i
-    Just dev -> bracket (SDL.openJoystick dev)
-                        (liftIO . SDL.closeJoystick)
-                        (f <=< makeJoystick)
+    Nothing  -> E.throwIO $ JoystickMissingException i
+    Just dev -> SDL.openJoystick dev >>= makeJoystick
+
+freeJoystick :: MonadIO m => Joystick -> m ()
+freeJoystick (Joy j _) = SDL.closeJoystick j
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> Maybe act
 joyPressed joy button act i =

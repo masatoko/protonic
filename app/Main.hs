@@ -72,17 +72,16 @@ data Action
 mkGamepad :: Maybe Joystick -> Metapad Action
 mkGamepad mjs = flip execState newPad $ do
   -- Keyboard
-  modify . addAction $ P.pressed SDL.ScancodeF Go
+  modify . addAction $ P.hold SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
   -- Joystick
   case mjs of
     Just js -> do
       -- Buttons
-      mapM_ (modify . addAction . uncurry (P.joyPressed js))
-        [ (10, Go), (11, Go), (12, Go), (13, Go)
-        , (4, Enter)
-        ]
+      modify . addAction $ P.joyPressed js 4 Enter
+      mapM_ (modify . addAction . uncurry (P.joyHold js))
+        [ (10, Go), (11, Go), (12, Go), (13, Go) ]
       -- Axes
       modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
 

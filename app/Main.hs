@@ -46,8 +46,12 @@ main =
       runScene (titleScene gamepad) Title
     maybe (return ()) P.freeJoystick mjs
     return ()
-  where
-    conf = P.defaultConfig {P.winSize = V2 300 300}
+
+conf :: P.Config
+conf = P.defaultConfig
+  { P.winSize = V2 300 300
+  , P.confDebugJoystick = P.DebugJoystick True False
+  }
 
     -- monitor mjs =
     --   case mjs of

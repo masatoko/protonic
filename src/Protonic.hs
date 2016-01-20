@@ -4,7 +4,7 @@ module Protonic
   , runProtoT
   , withProtonic
   , runScene
-  , Update, Render
+  , Update, Render, Transit
   , Config (..), DebugJoystick (..)
   , defaultConfig
   , printsys
@@ -36,7 +36,7 @@ module Protonic
   ) where
 
 import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT, Render, Scene (..),
-                                   SceneState (..), Transition, Update,
+                                   SceneState (..), Transition, Update, Transit,
                                    continue, defaultConfig, end, next, nextNew,
                                    printsys, push, pushNew, runProtoT, runScene,
                                    withProtonic)

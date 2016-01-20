@@ -27,11 +27,17 @@ import           Protonic.TTFHelper      (renderBlended, sizeText)
 
 data Config = Config
   { winSize :: V2 Int
+  , confDebugJoystick :: DebugJoystick
   }
+
+data DebugJoystick = DebugJoystick
+  { djVisButton :: Bool
+  , djVisAxis :: Bool}
 
 defaultConfig :: Config
 defaultConfig = Config
   { winSize = V2 640 480
+  , confDebugJoystick = DebugJoystick False False
   }
 
 type Time = Word32
@@ -45,6 +51,7 @@ data ProtoConfig = ProtoConfig
   , fontSize         :: Int
   -- Debug
   , debugPrintSystem :: Bool
+  , debugJoystick    :: DebugJoystick
   }
 
 data ProtoState = ProtoState
@@ -95,6 +102,7 @@ withProtonic config go =
               , fontPath = path
               , fontSize = size
               , debugPrintSystem = True
+              , debugJoystick = confDebugJoystick config
               }
     --
     withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
@@ -271,11 +279,13 @@ openFont str size = do
 
 -- | Process events about system
 procEvents :: [SDL.Event] -> ProtoT ()
-procEvents = mapM_ (work . SDL.eventPayload)
+procEvents es = go =<< asks debugJoystick
   where
-    work :: SDL.EventPayload -> ProtoT ()
-    work (SDL.WindowClosedEvent _) = liftIO exitSuccess
-    work SDL.QuitEvent             = liftIO exitSuccess
-    -- work (SDL.JoyButtonEvent d)    = liftIO . print $ d
-    -- work (SDL.JoyAxisEvent d)      = liftIO . print $ d
-    work _ = return ()
+    go dj = mapM_ (work . SDL.eventPayload) es
+      where
+        work :: SDL.EventPayload -> ProtoT ()
+        work (SDL.WindowClosedEvent _) = liftIO exitSuccess
+        work SDL.QuitEvent             = liftIO exitSuccess
+        work (SDL.JoyButtonEvent d)    = when (djVisButton dj) $ liftIO . print $ d
+        work (SDL.JoyAxisEvent d)      = when (djVisAxis dj) $ liftIO . print $ d
+        work _ = return ()

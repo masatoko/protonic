@@ -32,18 +32,19 @@ module Protonic
   , Joystick
   , monitorJoystick
   , newJoystickAt, freeJoystick
-  , joyPressed, joyAxis, joyAxis2
+  , joyHold, joyPressed, joyAxis, joyAxis2
   ) where
 
-import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT, Render, Scene (..),
-                                   SceneState (..), Transition, Update, Transit,
-                                   continue, defaultConfig, end, next, nextNew,
-                                   printsys, push, pushNew, runProtoT, runScene,
-                                   withProtonic)
+import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
+                                   Render, Scene (..), SceneState (..), Transit,
+                                   Transition, Update, continue, defaultConfig,
+                                   end, next, nextNew, printsys, push, pushNew,
+                                   runProtoT, runScene, withProtonic)
 import           Protonic.Data    (Font, Sprite)
-import           Protonic.Metapad (Input, Joystick,
-                                   Metapad, addAction, freeJoystick, hold,
-                                   joyPressed, joyAxis, joyAxis2, monitorJoystick, mousePosAct,
-                                   newJoystickAt, newPad, pressed, released)
+import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
+                                   freeJoystick, hold, joyAxis, joyAxis2,
+                                   joyHold, joyPressed, monitorJoystick,
+                                   mousePosAct, newJoystickAt, newPad, pressed,
+                                   released)
 import           Protonic.Render  (clearBy, printTest, renderS)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

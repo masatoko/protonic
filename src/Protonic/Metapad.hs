@@ -4,7 +4,7 @@ module Protonic.Metapad where
 
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int16, Int32)
-import           Data.Maybe             (mapMaybe)
+import           Data.Maybe             (catMaybes, mapMaybe)
 import qualified Data.Vector            as V
 import           Data.Word              (Word8)
 import           Foreign.C.Types        (CInt)
@@ -14,7 +14,7 @@ import           Safe                   (headMay)
 
 import qualified SDL
 
-data Metapad a = Metapad [Input -> Maybe a]
+data Metapad a = Metapad [Input -> IO (Maybe a)]
 
 data Input = Input
   { keyboard     :: [SDL.KeyboardEventData]
@@ -56,28 +56,28 @@ snapshotInput es =
 newPad :: Metapad a
 newPad = Metapad []
 
-addAction :: (Input -> Maybe a) -> Metapad a -> Metapad a
+addAction :: (Input -> IO (Maybe a)) -> Metapad a -> Metapad a
 addAction f (Metapad fs) = Metapad (f:fs)
 
 makeActions :: MonadIO m => [SDL.Event] -> Metapad a -> m [a]
 makeActions es (Metapad fs) =
   liftIO $ do
     i <- snapshotInput es
-    return $ mapMaybe (\f -> f i) fs
+    catMaybes <$> mapM (\f -> f i) fs
 
 -- * Helper
 
-hold :: SDL.Scancode -> act -> Input -> Maybe act
+hold :: SDL.Scancode -> act -> Input -> IO (Maybe act)
 hold code act i =
-  boolToMaybe act $ keyState i code
+  return $ boolToMaybe act $ keyState i code
 
-pressed :: SDL.Scancode -> act -> Input -> Maybe act
+pressed :: SDL.Scancode -> act -> Input -> IO (Maybe act)
 pressed code act i =
-  boolToMaybe act $ any (isTargetKey code SDL.Pressed) $ keyboard i
+  return $ boolToMaybe act $ any (isTargetKey code SDL.Pressed) $ keyboard i
 
-released :: SDL.Scancode -> act -> Input -> Maybe act
+released :: SDL.Scancode -> act -> Input -> IO (Maybe act)
 released code act i =
-  boolToMaybe act $ any (isTargetKey code SDL.Released) $ keyboard i
+  return $ boolToMaybe act $ any (isTargetKey code SDL.Released) $ keyboard i
 
 isTargetKey :: SDL.Scancode -> SDL.InputMotion -> SDL.KeyboardEventData -> Bool
 isTargetKey code motion e =
@@ -88,8 +88,8 @@ isTargetKey code motion e =
 
 -- Mouse
 
-mousePosAct :: Integral a => (V2 a -> act) -> Input -> Maybe act
-mousePosAct f i = Just . f $ fromIntegral <$> pos
+mousePosAct :: Integral a => (V2 a -> act) -> Input -> IO (Maybe act)
+mousePosAct f i = return . Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
 
 -- Joystick
@@ -130,9 +130,14 @@ monitorJoystick (Joy j _) = do
           p = take 20 $ replicate deg '*' ++ repeat '-'
       in show i ++ ": " ++ p ++ " ... " ++ show v
 
-joyPressed :: Joystick -> Word8 -> act -> Input -> Maybe act
+joyHold :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
+joyHold (Joy joy _) button act _ = do
+  pressed <- liftIO $ SDL.buttonPressed joy (fromIntegral button)
+  return $ boolToMaybe act pressed
+
+joyPressed :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
 joyPressed joy button act i =
-  boolToMaybe act $ any (isTargetButton joy button 0) $ joyButtons i
+  return $ boolToMaybe act $ any (isTargetButton joy button 0) $ joyButtons i
 
 isTargetButton :: Joystick -> Word8 -> Word8 -> SDL.JoyButtonEventData -> Bool
 isTargetButton (Joy _ jid) button state e =
@@ -141,15 +146,15 @@ isTargetButton (Joy _ jid) button state e =
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
-joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> Maybe act
+joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
 joyAxis joy axis make i =
-  fmap make . headMay . mapMaybe work . joyAxes $ i
+  return . fmap make . headMay . mapMaybe work . joyAxes $ i
   where
     work = axisValue joy axis
 
 -- TODO: One of axes -> fire ... (not simultaneously)
-joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> Maybe act
-joyAxis2 joy a0 a1 make i =
+joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
+joyAxis2 joy a0 a1 make i = return $
   make <$> (headMay . mapMaybe (work a0) . joyAxes $ i)
        <*> (headMay . mapMaybe (work a1) . joyAxes $ i)
   where

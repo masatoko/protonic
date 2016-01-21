@@ -152,13 +152,15 @@ joyAxis joy axis make i =
   where
     work = axisValue joy axis
 
--- TODO: One of axes -> fire ... (not simultaneously)
 joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
-joyAxis2 joy a0 a1 make i = return $
-  make <$> (headMay . mapMaybe (work a0) . joyAxes $ i)
-       <*> (headMay . mapMaybe (work a1) . joyAxes $ i)
+joyAxis2 joy@(Joy js _) a0 a1 make i =
+  work (headMay . mapMaybe (axisValue joy a0) . joyAxes $ i)
+       (headMay . mapMaybe (axisValue joy a1) . joyAxes $ i)
   where
-    work = axisValue joy
+    work (Just v0) (Just v1) = return . Just $ make v0 v1
+    work (Just v0) Nothing   = fmap Just $ make <$> pure v0 <*> SDL.axisPosition js (fromIntegral a1)
+    work Nothing   (Just v1) = fmap Just $ make <$> SDL.axisPosition js (fromIntegral a0) <*> pure v1
+    work Nothing   Nothing   = return Nothing
 
 axisValue :: Joystick -> Word8 -> SDL.JoyAxisEventData -> Maybe Int16
 axisValue (Joy _ jid) axis (SDL.JoyAxisEventData jid' axis' v) =

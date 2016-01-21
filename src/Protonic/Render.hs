@@ -24,13 +24,13 @@ clearBy color = do
   SDL.rendererDrawColor r $= fromIntegral <$> color
   SDL.clear r
 
-renderS :: Sprite -> V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
+renderS :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
 renderS (Sprite tex size) pos mSize mDeg =
   copy mDeg =<< asks renderer
   where
     pos' = fromIntegral <$> pos
     size' = fromMaybe size mSize
-    dest = Just $ SDL.Rectangle (P pos') size'
+    dest = Just $ SDL.Rectangle pos' size'
     --
     copy (Just deg) r =
       SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
@@ -39,7 +39,7 @@ renderS (Sprite tex size) pos mSize mDeg =
         pRot = Just $ P $ (`div` 2) <$> size'
     copy Nothing r = SDL.copy r tex Nothing dest
 
-printTest :: V2 Int -> V4 Word8 -> Text -> ProtoT ()
+printTest :: Point V2 Int -> V4 Word8 -> Text -> ProtoT ()
 printTest pos color text = do
   font <- asks systemFont
   rndr <- asks renderer
@@ -48,7 +48,7 @@ printTest pos color text = do
     runManaged $ do
       surface <- managed $ bracket (renderBlended font color text) SDL.freeSurface
       texture <- managed $ bracket (SDL.createTextureFromSurface rndr surface) SDL.destroyTexture
-      let rect = Just $ SDL.Rectangle (P pos') (fromIntegral <$> V2 w h)
+      let rect = Just $ SDL.Rectangle pos' (fromIntegral <$> V2 w h)
       SDL.copy rndr texture Nothing rect
   where
     pos' = fromIntegral <$> pos

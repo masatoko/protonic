@@ -7,6 +7,7 @@ import           Data.Int            (Int16)
 import qualified Data.Text           as T
 import           Linear.V2
 import           Linear.V4
+import           Linear.Affine
 
 import qualified SDL
 
@@ -100,8 +101,8 @@ titleScene pad = Scene pad update render transit
 
     render :: Render Title
     render _ = do
-      P.printTest (V2 10 100) (V4 0 255 255 255) "Enter - start"
-      P.printTest (V2 10 120) (V4 0 255 255 255) "Escape - exit"
+      P.printTest (P (V2 10 100)) (V4 0 255 255 255) "Enter - start"
+      P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
     transit as _
       | Enter `elem` as = P.nextNew (mainScene pad) =<< initGame
@@ -126,11 +127,11 @@ mainScene pad = Scene pad update render transit
     render :: Render Game
     render (Game s d i) = do
       P.clearBy $ V4 0 0 0 255
-      P.renderS s (V2 150 150) Nothing (Just d)
-      P.printTest (V2 10 100) (V4 255 255 255 255) "Press Enter key to pause"
-      P.printTest (V2 10 120) (V4 255 255 255 255) "Press F key!"
+      P.renderS s (P (V2 150 150)) Nothing (Just d)
+      P.printTest (P (V2 10 100)) (V4 255 255 255 255) "Press Enter key to pause"
+      P.printTest (P (V2 10 120)) (V4 255 255 255 255) "Press F key!"
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'
-      P.printTest (V2 10 140) (V4 255 255 255 255) $ T.pack progress
+      P.printTest (P (V2 10 140)) (V4 255 255 255 255) $ T.pack progress
 
     transit as g
       | cnt > targetCount = P.next (clearScene cnt pad)
@@ -148,7 +149,7 @@ pauseScene pad = Scene pad update render transit
 
     render _ = do
       P.clearBy $ V4 50 50 0 255
-      P.printTest (V2 10 100) (V4 255 255 255 255) "PAUSE"
+      P.printTest (P (V2 10 100)) (V4 255 255 255 255) "PAUSE"
 
     transit as _
       | Enter `elem` as = P.end
@@ -161,9 +162,9 @@ clearScene score pad = Scene pad update render transit
 
     render _ = do
       P.clearBy $ V4 0 0 255 255
-      P.printTest (V2 10 100) (V4 255 255 255 255) "CLEAR!"
-      P.printTest (V2 10 120) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
-      P.printTest (V2 10 140) (V4 255 255 255 255) "Enter - title"
+      P.printTest (P (V2 10 100)) (V4 255 255 255 255) "CLEAR!"
+      P.printTest (P (V2 10 120)) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
+      P.printTest (P (V2 10 140)) (V4 255 255 255 255) "Enter - title"
 
     transit as g
       | Enter `elem` as = do

@@ -132,8 +132,8 @@ monitorJoystick (Joy j _) = do
 
 joyHold :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
 joyHold (Joy joy _) button act _ = do
-  pressed <- liftIO $ SDL.buttonPressed joy (fromIntegral button)
-  return $ boolToMaybe act pressed
+  p <- liftIO $ SDL.buttonPressed joy (fromIntegral button)
+  return $ boolToMaybe act p
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
 joyPressed joy button act i =

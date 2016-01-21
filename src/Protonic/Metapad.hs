@@ -146,14 +146,14 @@ isTargetButton (Joy _ jid) button state e =
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
-joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
-joyAxis joy axis make i =
+joyAxisChanged :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
+joyAxisChanged joy axis make i =
   return . fmap make . headMay . mapMaybe work . joyAxes $ i
   where
     work = axisValue joy axis
 
-joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
-joyAxis2 joy@(Joy js _) a0 a1 make i =
+joyAxisChanged2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
+joyAxisChanged2 joy@(Joy js _) a0 a1 make i =
   work (headMay . mapMaybe (axisValue joy a0) . joyAxes $ i)
        (headMay . mapMaybe (axisValue joy a1) . joyAxes $ i)
   where

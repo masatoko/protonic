@@ -44,6 +44,7 @@ type Time = Word32
 
 data ProtoConfig = ProtoConfig
   { graphFPS         :: Int
+  , scrSize          :: V2 Int
   -- Resource
   , renderer         :: SDL.Renderer
   , systemFont       :: TTFFont
@@ -97,6 +98,7 @@ withProtonic config go =
       bracket (openFont path size) TTF.closeFont $ \font ->
         work ProtoConfig
               { graphFPS = 60
+              , scrSize = winSize config
               , renderer = r
               , systemFont = font
               , fontPath = path
@@ -289,3 +291,8 @@ procEvents es = go =<< asks debugJoystick
         work (SDL.JoyButtonEvent d)    = when (djVisButton dj) $ liftIO . print $ d
         work (SDL.JoyAxisEvent d)      = when (djVisAxis dj) $ liftIO . print $ d
         work _ = return ()
+
+--
+
+screenSize :: ProtoT (V2 Int)
+screenSize = asks scrSize

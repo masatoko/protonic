@@ -12,6 +12,8 @@ module Protonic
   , SceneState (..)
   , Transition
   , continue, end, nextNew, next, pushNew, push
+  --
+  , screenSize
   -- Data
   , Font
   , Sprite
@@ -39,7 +41,7 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
                                    Render, Scene (..), SceneState (..), Transit,
                                    Transition, Update, continue, defaultConfig,
                                    end, next, nextNew, printsys, push, pushNew,
-                                   runProtoT, runScene, withProtonic)
+                                   runProtoT, runScene, withProtonic, screenSize)
 import           Protonic.Data    (Font, Sprite)
 import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2,

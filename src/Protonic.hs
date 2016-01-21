@@ -16,7 +16,7 @@ module Protonic
   , screenSize
   -- Data
   , Font
-  , Sprite
+  , Sprite (spsize)
   -- Render
   , clearBy
   , renderS
@@ -42,7 +42,7 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
                                    Transition, Update, continue, defaultConfig,
                                    end, next, nextNew, printsys, push, pushNew,
                                    runProtoT, runScene, withProtonic, screenSize)
-import           Protonic.Data    (Font, Sprite)
+import           Protonic.Data    (Font, Sprite (spsize))
 import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2,
                                    joyHold, joyPressed, monitorJoystick,

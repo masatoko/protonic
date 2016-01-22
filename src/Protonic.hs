@@ -18,7 +18,9 @@ module Protonic
   , Font
   , Sprite (spsize)
   -- Render
+  , setColor
   , clearBy
+  , drawLine, drawRect, fillRect
   , renderS
   , printTest
   -- Sprite

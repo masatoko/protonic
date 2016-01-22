@@ -18,10 +18,15 @@ import           Protonic.Core
 import           Protonic.Data         (Sprite (..))
 import           Protonic.TTFHelper    (renderBlended, sizeText)
 
-clearBy :: V4 Int -> ProtoT ()
+setColor :: V4 Word8 -> ProtoT ()
+setColor color = do
+  r <- asks renderer
+  SDL.rendererDrawColor r $= color
+
+clearBy :: V4 Word8 -> ProtoT ()
 clearBy color = do
   r <- asks renderer
-  SDL.rendererDrawColor r $= fromIntegral <$> color
+  SDL.rendererDrawColor r $= color
   SDL.clear r
 
 renderS :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
@@ -38,6 +43,30 @@ renderS (Sprite tex size) pos mSize mDeg =
         deg' = realToFrac deg
         pRot = Just $ P $ (`div` 2) <$> size'
     copy Nothing r = SDL.copy r tex Nothing dest
+
+drawLine :: Point V2 Int -> Point V2 Int -> ProtoT ()
+drawLine org dst = do
+  r <- asks renderer
+  SDL.drawLine r org' dst'
+  where
+    org' = fromIntegral <$> org
+    dst' = fromIntegral <$> dst
+
+drawRect :: Point V2 Int -> V2 Int -> ProtoT ()
+drawRect p s = do
+  r <- asks renderer
+  SDL.drawRect r (Just (SDL.Rectangle p' s'))
+  where
+    p' = fromIntegral <$> p
+    s' = fromIntegral <$> s
+
+fillRect :: Point V2 Int -> V2 Int -> ProtoT ()
+fillRect p s = do
+  r <- asks renderer
+  SDL.fillRect r (Just (SDL.Rectangle p' s'))
+  where
+    p' = fromIntegral <$> p
+    s' = fromIntegral <$> s
 
 printTest :: Point V2 Int -> V4 Word8 -> Text -> ProtoT ()
 printTest pos color text = do

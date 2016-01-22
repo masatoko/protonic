@@ -50,5 +50,5 @@ import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    joyHold, joyPressed, monitorJoystick,
                                    mousePosAct, newJoystickAt, newPad, pressed,
                                    released)
-import           Protonic.Render  (clearBy, printTest, renderS)
+import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)

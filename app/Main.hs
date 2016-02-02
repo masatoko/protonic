@@ -21,6 +21,7 @@ data Title = Title
 
 data Game = Game
   { gSprite :: P.Sprite
+  , gSound  :: P.Sound
   , gDeg    :: !Double
   , gCount  :: !Int
   }
@@ -30,12 +31,14 @@ initGame = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
+  sound <- P.newSound "data/sample.wav"
   liftIO . putStrLn $ "init Game"
-  return $ Game char 0 0
+  return $ Game char sound 0 0
 
 freeGame :: MonadIO m => Game -> m ()
 freeGame g = liftIO $ do
   P.freeSprite . gSprite $ g
+  P.freeSound . gSound $ g
   putStrLn "free Game"
 
 main :: IO ()
@@ -119,15 +122,17 @@ mainScene pad = Scene pad update render transit
         go = mapM_ count as >> setDeg
 
         count :: Action -> StateT Game ProtoT ()
-        count Go = modify (\a -> let c = gCount a in a {gCount = c + 1})
+        count Go = do
+          modify (\a -> let c = gCount a in a {gCount = c + 1})
+          P.play =<< gets gSound
         count _  = return ()
 
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
     render :: Render Game
-    render (Game s d i) = do
+    render (Game spr _ d i) = do
       P.clearBy $ V4 0 0 0 255
-      P.renderS s (P (V2 150 150)) Nothing (Just d)
+      P.renderS spr (P (V2 150 150)) Nothing (Just d)
       P.printTest (P (V2 10 100)) (V4 255 255 255 255) "Press Enter key to pause"
       P.printTest (P (V2 10 120)) (V4 255 255 255 255) "Press F key!"
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'

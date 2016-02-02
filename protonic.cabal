@@ -23,6 +23,7 @@ library
                      , Protonic.Metapad
                      , Protonic.Render
                      , Protonic.Sprite
+                     , Protonic.Sound
                      , Protonic.TTFHelper
   -- other-extensions:
   pkgconfig-depends:   sdl2 >= 2

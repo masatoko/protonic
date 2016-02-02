@@ -11,8 +11,6 @@ import           Control.Monad.State
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import           Data.Word               (Word32)
-import           Foreign.C.String        (withCString)
-import           Foreign.Ptr             (nullPtr)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4

@@ -11,6 +11,8 @@ import           Control.Monad.State
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import           Data.Word               (Word32)
+import           Foreign.C.String        (withCString)
+import           Foreign.Ptr             (nullPtr)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
 import           Linear.V4
@@ -21,6 +23,7 @@ import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import           SDL                     (($=))
 import qualified SDL
+import qualified SDL.Raw.Mixer           as Mix
 
 import           Protonic.Metapad
 import           Protonic.TTFHelper      (renderBlended, sizeText)
@@ -86,11 +89,12 @@ runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
 withProtonic :: Config -> (Proto -> IO ()) -> IO ()
 withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $
-    TTF.withInit $
-      withRenderer config $ \r ->
-        withConf r $ \conf -> do
-          let proto = Proto conf initialState
-          go proto
+    withMixer $
+      TTF.withInit $
+        withRenderer config $ \r ->
+          withConf r $ \conf -> do
+            let proto = Proto conf initialState
+            go proto
   where
     withConf r work = do
       let path = "data/font/system.ttf"
@@ -106,6 +110,21 @@ withProtonic config go =
               , debugPrintSystem = True
               , debugJoystick = confDebugJoystick config
               }
+    --
+    withMixer :: IO a -> IO a
+    withMixer = bracket_ initMix closeMix
+      where
+        rate = 22050
+        format = Mix.AUDIO_S16SYS
+        channels = 2
+        bufsize = 256
+        initMix = do
+          Mix.init Mix.INIT_MP3
+          res <- Mix.openAudio rate format channels bufsize
+          assert $ res == 0
+        closeMix = do
+          Mix.closeAudio
+          Mix.quit
     --
     withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
     withRenderer conf work = withW $ withR work
@@ -295,3 +314,6 @@ procEvents es = go =<< asks debugJoystick
 
 screenSize :: ProtoT (V2 Int)
 screenSize = asks scrSize
+
+assert :: Bool -> IO ()
+assert = flip unless $ error "Assertion failed"

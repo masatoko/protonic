@@ -21,7 +21,8 @@ import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import           SDL                     (($=))
 import qualified SDL
-import qualified SDL.Raw.Mixer           as Mix
+-- import qualified SDL.Raw.Mixer           as Mix
+import qualified SDL.Mixer               as Mix
 
 import           Protonic.Metapad
 import           Protonic.TTFHelper      (renderBlended, sizeText)
@@ -87,7 +88,7 @@ runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
 withProtonic :: Config -> (Proto -> IO ()) -> IO ()
 withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $
-    withMixer $
+    Mix.withAudio Mix.defaultAudio 256 $
       TTF.withInit $
         withRenderer config $ \r ->
           withConf r $ \conf -> do
@@ -109,20 +110,20 @@ withProtonic config go =
               , debugJoystick = confDebugJoystick config
               }
     --
-    withMixer :: IO a -> IO a
-    withMixer = bracket_ initMix closeMix
-      where
-        rate = 22050
-        format = Mix.AUDIO_S16SYS
-        channels = 2
-        bufsize = 256
-        initMix = do
-          Mix.init Mix.INIT_MP3
-          res <- Mix.openAudio rate format channels bufsize
-          assert $ res == 0
-        closeMix = do
-          Mix.closeAudio
-          Mix.quit
+    -- withMixer :: IO a -> IO a
+    -- withMixer = bracket_ initMix closeMix
+    --   where
+    --     rate = 22050
+    --     format = Mix.AUDIO_S16SYS
+    --     channels = 2
+    --     bufsize = 256
+    --     initMix = do
+    --       Mix.init Mix.INIT_MP3
+    --       res <- Mix.openAudio rate format channels bufsize
+    --       assert $ res == 0
+    --     closeMix = do
+    --       Mix.closeAudio
+    --       Mix.quit
     --
     withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
     withRenderer conf work = withW $ withR work

@@ -21,6 +21,9 @@ freeSound (Sound chunk) = Mix.free chunk
 play :: MonadIO m => Sound -> m ()
 play (Sound chunk) = Mix.play chunk
 
+playOn :: MonadIO m => Integer -> Sound -> m Mix.Channel
+playOn i (Sound chunk) = Mix.playOn (fromIntegral i) Mix.Once chunk
+
 --
 
 assert :: String -> Bool -> IO ()

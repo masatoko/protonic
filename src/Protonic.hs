@@ -44,6 +44,7 @@ module Protonic
   , newSound
   , freeSound
   , play
+  , playOn
   ) where
 
 import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
@@ -59,4 +60,4 @@ import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    released)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)
-import           Protonic.Sound   (Sound, newSound, freeSound, play)
+import           Protonic.Sound   (Sound, newSound, freeSound, play, playOn)

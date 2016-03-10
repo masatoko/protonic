@@ -141,7 +141,7 @@ withProtonic config go =
 
 -- Scene
 type Update g a = SceneState -> [a] -> g -> ProtoT g
-type Render g = g -> ProtoT ()
+type Render g = SceneState -> g -> ProtoT ()
 type Transit g a = [a] -> g -> ProtoT (Maybe (Transition g))
 
 data Scene g a = Scene
@@ -210,7 +210,7 @@ sceneLoop iniG iniS scene =
       g' <- update s actions g
       -- Rendering
       preRender
-      render g'
+      render s g'
       updateFPS
       printSystemState s
       printMessages

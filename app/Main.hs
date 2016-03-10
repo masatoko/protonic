@@ -103,7 +103,7 @@ titleScene pad = Scene pad update render transit
         work _              = return ()
 
     render :: Render Title
-    render _ = do
+    render _ _ = do
       P.printTest (P (V2 10 100)) (V4 0 255 255 255) "Enter - start"
       P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
@@ -130,7 +130,7 @@ mainScene pad = Scene pad update render transit
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
     render :: Render Game
-    render (Game spr _ d i) = do
+    render _ (Game spr _ d i) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS spr (P (V2 150 150)) Nothing (Just d)
       P.printTest (P (V2 10 100)) (V4 255 255 255 255) "Press Enter key to pause"
@@ -152,7 +152,7 @@ pauseScene pad = Scene pad update render transit
   where
     update _ _ = return
 
-    render _ = do
+    render _ _ = do
       P.clearBy $ V4 50 50 0 255
       P.printTest (P (V2 10 100)) (V4 255 255 255 255) "PAUSE"
 
@@ -165,7 +165,7 @@ clearScene score pad = Scene pad update render transit
   where
     update _ _ = return
 
-    render _ = do
+    render _ _ = do
       P.clearBy $ V4 0 0 255 255
       P.printTest (P (V2 10 100)) (V4 255 255 255 255) "CLEAR!"
       P.printTest (P (V2 10 120)) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)

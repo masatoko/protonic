@@ -3,8 +3,6 @@ module Protonic.Sound where
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Exception (throwIO)
 import           Control.Monad (unless)
-import           Foreign.C.String        (withCString)
-import           Foreign.Ptr             (nullPtr, Ptr)
 
 import qualified SDL.Mixer               as Mix
 

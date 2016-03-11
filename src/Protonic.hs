@@ -36,7 +36,7 @@ module Protonic
   , Joystick
   , monitorJoystick
   , newJoystickAt, freeJoystick
-  , joyHold, joyPressed
+  , joyHold, joyPressed, joyReleased
   , joyAxis, joyAxis2
   , joyAxisChanged, joyAxisChanged2
   -- * Sound
@@ -55,7 +55,7 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
 import           Protonic.Data    (Font, Sprite (spsize))
 import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
-                                   joyHold, joyPressed, monitorJoystick,
+                                   joyHold, joyPressed, joyReleased, monitorJoystick,
                                    mousePosAct, newJoystickAt, newPad, pressed,
                                    released)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)

@@ -137,6 +137,10 @@ joyHold (Joy joy _) button act _ = do
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
 joyPressed joy button act i =
+  return $ boolToMaybe act $ any (isTargetButton joy button 1) $ joyButtons i
+
+joyReleased :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
+joyReleased joy button act i =
   return $ boolToMaybe act $ any (isTargetButton joy button 0) $ joyButtons i
 
 isTargetButton :: Joystick -> Word8 -> Word8 -> SDL.JoyButtonEventData -> Bool

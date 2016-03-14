@@ -126,7 +126,9 @@ mainScene mjs pad = Scene pad update render transit
           modify (\a -> let c = gCount a in a {gCount = c + 1})
           P.play =<< gets gSound
           c <- gets gCount
-          when (c == 1) $ mapM_ (\joy -> P.rumble joy 0.5 1000) mjs
+          let strength = fromIntegral c * 0.2
+              len = fromIntegral c * 100
+          mapM_ (\joy -> P.rumble joy strength len) mjs
         count _  = return ()
 
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})

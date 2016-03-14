@@ -8,7 +8,7 @@ import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (catMaybes, mapMaybe)
 import qualified Data.Vector            as V
-import           Data.Word              (Word8)
+import           Data.Word              (Word8, Word32)
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2
@@ -202,13 +202,15 @@ axisValue joy axis (SDL.JoyAxisEventData jid' axis' v) =
 
 -- Haptic
 
-rumble :: MonadIO m => Joystick -> Double -> Int -> m ()
+-- | Rumble joystick
+-- strength: 0 - 1
+-- len:      msec
+rumble :: MonadIO m => Joystick -> Double -> Word32 -> m ()
 rumble joy strength len =
   liftIO $ forM_ (jsHap joy) $ \dev ->
-    HAP.hapticRumblePlay dev str' len'
+    HAP.hapticRumblePlay dev str' len
   where
     str' = realToFrac strength
-    len' = fromIntegral len
 
 -- Utility
 

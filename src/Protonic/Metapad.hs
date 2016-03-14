@@ -2,6 +2,8 @@
 
 module Protonic.Metapad where
 
+import qualified Control.Exception      as E
+import           Control.Monad          (forM_)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (catMaybes, mapMaybe)
@@ -13,6 +15,7 @@ import           Linear.V2
 import           Safe                   (headMay)
 
 import qualified SDL
+import qualified SDL.Haptic as HAP
 
 data Metapad a = Metapad [Input -> IO (Maybe a)]
 
@@ -96,11 +99,26 @@ mousePosAct f i = return . Just . f $ fromIntegral <$> pos
 
 type JoystickID = Int32
 
-data Joystick = Joy SDL.Joystick JoystickID
-  deriving (Eq, Show)
+data Joystick = Joy
+  { js :: SDL.Joystick
+  , jsId :: JoystickID
+  , jsHap :: Maybe HAP.HapticDevice
+  } deriving (Eq, Show)
 
 makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
-makeJoystick j = Joy j <$> SDL.getJoystickID j
+makeJoystick j = do
+  mHap <- liftIO getHaptic
+  mapM_ HAP.hapticRumbleInit mHap
+  Joy j <$> SDL.getJoystickID j <*> pure mHap
+  where
+    getHaptic :: IO (Maybe HAP.HapticDevice)
+    getHaptic =
+      (Just <$> HAP.openHaptic (HAP.OpenHapticJoystick j)) `E.catch` handler
+
+    handler :: E.SomeException -> IO (Maybe HAP.HapticDevice)
+    handler _e =
+      -- putStrLn $ "Exception @getHaptic: " ++ show e
+      return Nothing
 
 newJoystickAt :: MonadIO m => Int -> m (Maybe Joystick)
 newJoystickAt i = do
@@ -110,14 +128,17 @@ newJoystickAt i = do
     Just dev -> Just <$> (makeJoystick =<< SDL.openJoystick dev)
 
 freeJoystick :: MonadIO m => Joystick -> m ()
-freeJoystick (Joy j _) = SDL.closeJoystick j
+freeJoystick joy = do
+  mapM_ HAP.closeHaptic $ jsHap joy
+  SDL.closeJoystick $ js joy
 
 -- for test
 monitorJoystick :: Joystick -> IO ()
-monitorJoystick (Joy j _) = do
+monitorJoystick joy = do
   n <- fromIntegral <$> SDL.numAxes j
   mapM_ work $ take n [0..]
   where
+    j = js joy
     work i = (putStrLn . prog i) =<< SDL.axisPosition j i
 
     norm :: Int16 -> Double
@@ -131,8 +152,8 @@ monitorJoystick (Joy j _) = do
       in show i ++ ": " ++ p ++ " ... " ++ show v
 
 joyHold :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
-joyHold (Joy joy _) button act _ = do
-  p <- liftIO $ SDL.buttonPressed joy (fromIntegral button)
+joyHold joy button act _ = do
+  p <- liftIO $ SDL.buttonPressed (js joy) (fromIntegral button)
   return $ boolToMaybe act p
 
 joyPressed :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
@@ -144,20 +165,20 @@ joyReleased joy button act i =
   return $ boolToMaybe act $ any (isTargetButton joy button 0) $ joyButtons i
 
 isTargetButton :: Joystick -> Word8 -> Word8 -> SDL.JoyButtonEventData -> Bool
-isTargetButton (Joy _ jid) button state e =
-  let isId = SDL.joyButtonEventWhich e == jid
+isTargetButton joy button state e =
+  let isId = SDL.joyButtonEventWhich e == jsId joy
       isButton = SDL.joyButtonEventButton e == button
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
 joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
-joyAxis (Joy js _) axis make _ =
-  fmap Just $ make <$> SDL.axisPosition js (fromIntegral axis)
+joyAxis joy axis make _ =
+  fmap Just $ make <$> SDL.axisPosition (js joy) (fromIntegral axis)
 
 joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
-joyAxis2 (Joy js _) a0 a1 make _ = fmap Just $
-  make <$> SDL.axisPosition js (fromIntegral a0)
-       <*> SDL.axisPosition js (fromIntegral a1)
+joyAxis2 joy a0 a1 make _ = fmap Just $
+  make <$> SDL.axisPosition (js joy) (fromIntegral a0)
+       <*> SDL.axisPosition (js joy) (fromIntegral a1)
 
 joyAxisChanged :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
 joyAxisChanged joy axis make i =
@@ -166,18 +187,28 @@ joyAxisChanged joy axis make i =
     work = axisValue joy axis
 
 joyAxisChanged2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
-joyAxisChanged2 joy@(Joy js _) a0 a1 make i =
+joyAxisChanged2 joy a0 a1 make i =
   work (headMay . mapMaybe (axisValue joy a0) . joyAxes $ i)
        (headMay . mapMaybe (axisValue joy a1) . joyAxes $ i)
   where
     work (Just v0) (Just v1) = return . Just $ make v0 v1
-    work (Just v0) Nothing   = fmap Just $ make <$> pure v0 <*> SDL.axisPosition js (fromIntegral a1)
-    work Nothing   (Just v1) = fmap Just $ make <$> SDL.axisPosition js (fromIntegral a0) <*> pure v1
+    work (Just v0) Nothing   = fmap Just $ make <$> pure v0 <*> SDL.axisPosition (js joy) (fromIntegral a1)
+    work Nothing   (Just v1) = fmap Just $ make <$> SDL.axisPosition (js joy) (fromIntegral a0) <*> pure v1
     work Nothing   Nothing   = return Nothing
 
 axisValue :: Joystick -> Word8 -> SDL.JoyAxisEventData -> Maybe Int16
-axisValue (Joy _ jid) axis (SDL.JoyAxisEventData jid' axis' v) =
-  if jid == jid' && axis == axis' then Just v else Nothing
+axisValue joy axis (SDL.JoyAxisEventData jid' axis' v) =
+  if jsId joy == jid' && axis == axis' then Just v else Nothing
+
+-- Haptic
+
+rumble :: MonadIO m => Joystick -> Double -> Int -> m ()
+rumble joy strength len =
+  liftIO $ forM_ (jsHap joy) $ \dev ->
+    HAP.hapticRumblePlay dev str' len'
+  where
+    str' = realToFrac strength
+    len' = fromIntegral len
 
 -- Utility
 

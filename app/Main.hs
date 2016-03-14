@@ -47,7 +47,7 @@ main =
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $
-      runScene (titleScene gamepad) Title
+      runScene (titleScene mjs gamepad) Title
     maybe (return ()) P.freeJoystick mjs
     return ()
 
@@ -84,15 +84,15 @@ mkGamepad mjs = flip execState newPad $ do
     Just js -> do
       -- Buttons
       modify . addAction $ P.joyPressed js 4 Enter
-      mapM_ (modify . addAction . uncurry (P.joyHold js))
+      mapM_ (modify . addAction . uncurry (P.joyPressed js))
         [ (10, Go), (11, Go), (12, Go), (13, Go) ]
       -- Axes
       modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
 
     Nothing -> return ()
 
-titleScene :: Metapad Action -> Scene Title Action
-titleScene pad = Scene pad update render transit
+titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
+titleScene mjs pad = Scene pad update render transit
   where
     update :: Update Title Action
     update _ as t = do
@@ -108,12 +108,12 @@ titleScene pad = Scene pad update render transit
       P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
     transit as _
-      | Enter `elem` as = P.nextNew (mainScene pad) =<< initGame
+      | Enter `elem` as = P.nextNew (mainScene mjs pad) =<< initGame
       | Exit `elem` as  = P.end
       | otherwise       = P.continue
 
-mainScene :: Metapad Action -> Scene Game Action
-mainScene pad = Scene pad update render transit
+mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
+mainScene mjs pad = Scene pad update render transit
   where
     update :: Update Game Action
     update stt as = execStateT go
@@ -125,6 +125,8 @@ mainScene pad = Scene pad update render transit
         count Go = do
           modify (\a -> let c = gCount a in a {gCount = c + 1})
           P.play =<< gets gSound
+          c <- gets gCount
+          when (c == 1) $ mapM_ (\joy -> P.rumble joy 0.5 1000) mjs
         count _  = return ()
 
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
@@ -139,7 +141,7 @@ mainScene pad = Scene pad update render transit
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) $ T.pack progress
 
     transit as g
-      | cnt > targetCount = P.next (clearScene cnt pad)
+      | cnt > targetCount = P.next (clearScene mjs cnt pad)
       | Enter `elem` as   = P.push (pauseScene pad)
       | otherwise         = P.continue
       where
@@ -160,8 +162,8 @@ pauseScene pad = Scene pad update render transit
       | Enter `elem` as = P.end
       | otherwise       = P.continue
 
-clearScene :: Int -> Metapad Action -> Scene Game Action
-clearScene score pad = Scene pad update render transit
+clearScene :: Maybe P.Joystick -> Int -> Metapad Action -> Scene Game Action
+clearScene mjs score pad = Scene pad update render transit
   where
     update _ _ = return
 
@@ -174,5 +176,5 @@ clearScene score pad = Scene pad update render transit
     transit as g
       | Enter `elem` as = do
           freeGame g
-          P.nextNew (titleScene pad) Title
+          P.nextNew (titleScene mjs pad) Title
       | otherwise       = P.continue

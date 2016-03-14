@@ -39,6 +39,7 @@ module Protonic
   , joyHold, joyPressed, joyReleased
   , joyAxis, joyAxis2
   , joyAxisChanged, joyAxisChanged2
+  , rumble
   -- * Sound
   , Sound
   , newSound
@@ -57,7 +58,7 @@ import           Protonic.Metapad (Input, Joystick, Metapad, addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
                                    joyHold, joyPressed, joyReleased, monitorJoystick,
                                    mousePosAct, newJoystickAt, newPad, pressed,
-                                   released)
+                                   released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)
 import           Protonic.Sound   (Sound, newSound, freeSound, play, playOn)

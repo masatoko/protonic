@@ -1,6 +1,7 @@
 module Protonic
   (
-    ProtoT
+    Proto
+  , ProtoT
   , runProtoT
   , withProtonic
   , runScene
@@ -48,7 +49,7 @@ module Protonic
   , playOn
   ) where
 
-import           Protonic.Core    (Config (..), DebugJoystick (..), ProtoT,
+import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, ProtoT,
                                    Render, Scene (..), SceneState (..), Transit,
                                    Transition, Update, continue, defaultConfig,
                                    end, next, nextNew, printsys, push, pushNew,

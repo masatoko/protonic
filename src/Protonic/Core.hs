@@ -216,7 +216,7 @@ sceneLoop iniG iniS scene =
       printMessages
       SDL.present =<< asks renderer
       -- Transition
-      mTrans <- transit actions g
+      mTrans <- transit actions g'
       -- Advance State
       wait t
       t' <- SDL.ticks

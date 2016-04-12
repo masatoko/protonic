@@ -90,7 +90,8 @@ withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $
     Mix.withAudio Mix.defaultAudio 256 $
       TTF.withInit $
-        withRenderer config $ \r ->
+        withRenderer config $ \r -> do
+          SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
           withConf r $ \conf -> do
             let proto = Proto conf initialState
             go proto

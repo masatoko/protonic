@@ -143,7 +143,7 @@ withProtonic config go =
 -- Scene
 type Update g a = SceneState -> [a] -> g -> ProtoT g
 type Render g = SceneState -> g -> ProtoT ()
-type Transit g a = [a] -> g -> ProtoT (Maybe (Transition g))
+type Transit g a = SceneState -> [a] -> g -> ProtoT (Maybe (Transition g))
 
 data Scene g a = Scene
   { scenePad     :: Metapad a
@@ -217,7 +217,7 @@ sceneLoop iniG iniS scene =
       printMessages
       SDL.present =<< asks renderer
       -- Transition
-      mTrans <- transit actions g'
+      mTrans <- transit s actions g'
       -- Advance State
       wait t
       t' <- SDL.ticks

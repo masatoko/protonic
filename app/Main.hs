@@ -107,7 +107,7 @@ titleScene mjs pad = Scene pad update render transit
       P.printTest (P (V2 10 100)) (V4 0 255 255 255) "Enter - start"
       P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
-    transit as _
+    transit _ as _
       | Enter `elem` as = P.nextNew (mainScene mjs pad) =<< initGame
       | Exit `elem` as  = P.end
       | otherwise       = P.continue
@@ -142,7 +142,7 @@ mainScene mjs pad = Scene pad update render transit
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) $ T.pack progress
 
-    transit as g
+    transit _ as g
       | cnt > targetCount = P.next (clearScene mjs cnt pad)
       | Enter `elem` as   = P.push (pauseScene pad)
       | otherwise         = P.continue
@@ -160,7 +160,7 @@ pauseScene pad = Scene pad update render transit
       P.clearBy $ V4 50 50 0 255
       P.printTest (P (V2 10 100)) (V4 255 255 255 255) "PAUSE"
 
-    transit as _
+    transit _ as _
       | Enter `elem` as = P.end
       | otherwise       = P.continue
 
@@ -175,7 +175,7 @@ clearScene mjs score pad = Scene pad update render transit
       P.printTest (P (V2 10 120)) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) "Enter - title"
 
-    transit as g
+    transit _ as g
       | Enter `elem` as = do
           freeGame g
           P.nextNew (titleScene mjs pad) Title

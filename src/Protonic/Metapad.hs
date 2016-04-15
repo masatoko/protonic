@@ -199,6 +199,15 @@ isTargetButton joy button state e =
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
+joyAllButtons :: Joystick -> ([Word8] -> act) -> Input -> IO (Maybe act)
+joyAllButtons joy mkAct i =
+  return . Just . mkAct $ bs
+  where
+    bs = mapMaybe work $ joyButtons i
+    work e =
+      boolToMaybe (SDL.joyButtonEventButton e) $
+        SDL.joyButtonEventWhich e == jsId joy
+
 joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
 joyAxis joy axis make _ =
   fmap Just $ make <$> SDL.axisPosition (js joy) (fromIntegral axis)

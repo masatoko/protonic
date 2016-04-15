@@ -31,6 +31,16 @@ data Input = Input
   , mouseButtons :: SDL.MouseButton -> Bool
   }
 
+data MouseButton
+  = ButtonLeft
+  | ButtonRight
+  deriving (Eq, Show, Read)
+
+data InputMotion
+  = Pressed
+  | Released
+  deriving (Eq, Show, Read)
+
 snapshotInput :: MonadIO m => [SDL.Event] -> m Input
 snapshotInput es =
   Input (sel kb) (sel mm) (sel mb)
@@ -94,6 +104,20 @@ isTargetKey code motion e =
 mousePosAct :: Integral a => (V2 a -> act) -> Input -> IO (Maybe act)
 mousePosAct f i = return . Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
+
+mouseButtonAct :: MouseButton -> InputMotion -> act -> Input -> IO (Maybe act)
+mouseButtonAct prtBtn prtMotion act i =
+  return $ boolToMaybe act $ any isTarget $ mouseButton i
+  where
+    btn = case prtBtn of
+            ButtonLeft  -> SDL.ButtonLeft
+            ButtonRight -> SDL.ButtonRight
+    motion = case prtMotion of
+               Pressed  -> SDL.Pressed
+               Released -> SDL.Released
+    isTarget e =
+      SDL.mouseButtonEventButton e == btn
+        && SDL.mouseButtonEventMotion e == motion
 
 -- Joystick
 

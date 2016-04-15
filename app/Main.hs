@@ -90,6 +90,8 @@ mkGamepad mjs = flip execState newPad $ do
       modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
 
     Nothing -> return ()
+  -- Mouse
+  modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
 titleScene mjs pad = Scene pad update render transit

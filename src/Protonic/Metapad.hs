@@ -39,6 +39,7 @@ data MouseButton
 data InputMotion
   = Pressed
   | Released
+  | Holded
   deriving (Eq, Show, Read)
 
 snapshotInput :: MonadIO m => [SDL.Event] -> m Input
@@ -106,8 +107,10 @@ mousePosAct f i = return . Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
 
 mouseButtonAct :: MouseButton -> InputMotion -> act -> Input -> IO (Maybe act)
-mouseButtonAct prtBtn prtMotion act i =
-  return $ boolToMaybe act $ any isTarget $ mouseButton i
+mouseButtonAct prtBtn prtMotion act i = return $
+  case prtMotion of
+    Holded -> boolToMaybe act $ mouseButtons i btn
+    _      -> boolToMaybe act $ any isTarget $ mouseButton i
   where
     btn = case prtBtn of
             ButtonLeft  -> SDL.ButtonLeft
@@ -115,6 +118,7 @@ mouseButtonAct prtBtn prtMotion act i =
     motion = case prtMotion of
                Pressed  -> SDL.Pressed
                Released -> SDL.Released
+               _        -> error "@mouseButtonAct"
     isTarget e =
       SDL.mouseButtonEventButton e == btn
         && SDL.mouseButtonEventMotion e == motion

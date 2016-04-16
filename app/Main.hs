@@ -53,7 +53,8 @@ main =
 
 conf :: P.Config
 conf = P.defaultConfig
-  { P.winSize = V2 300 300
+  { P.confWinSize = V2 300 300
+  , P.confWinTitle = "protpnic-app"
   , P.confWindowMode = SDL.Windowed
   , P.confDebugJoystick = P.DebugJoystick True False
   }

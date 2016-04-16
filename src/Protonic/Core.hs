@@ -28,7 +28,8 @@ import           Protonic.Metapad
 import           Protonic.TTFHelper      (renderBlended, sizeText)
 
 data Config = Config
-  { winSize :: V2 Int
+  { confWinSize :: V2 Int
+  , confWinTitle :: String
   , confWindowMode :: SDL.WindowMode
   , confDebugJoystick :: DebugJoystick
   }
@@ -39,7 +40,8 @@ data DebugJoystick = DebugJoystick
 
 defaultConfig :: Config
 defaultConfig = Config
-  { winSize = V2 640 480
+  { confWinSize = V2 640 480
+  , confWinTitle = "protonic"
   , confWindowMode = SDL.Windowed
   , confDebugJoystick = DebugJoystick False False
   }
@@ -104,7 +106,7 @@ withProtonic config go =
       bracket (openFont path size) TTF.closeFont $ \font ->
         work ProtoConfig
               { graphFPS = 60
-              , scrSize = winSize config
+              , scrSize = confWinSize config
               , renderer = r
               , systemFont = font
               , fontPath = path
@@ -131,15 +133,19 @@ withProtonic config go =
     withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
     withRenderer conf work = withW $ withR work
       where
-        withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
+        title = T.pack $ confWinTitle conf
+        
+        withW = bracket (SDL.createWindow title winConf)
                         SDL.destroyWindow
+
         withR func win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
                                  SDL.destroyRenderer
                                  (\r -> setLogicalSize r >> func r)
+
         winConf = SDL.defaultWindow
           { SDL.windowMode = confWindowMode conf
           , SDL.windowResizable = False
-          , SDL.windowInitialSize = fromIntegral <$> winSize conf
+          , SDL.windowInitialSize = fromIntegral <$> confWinSize conf
           }
 
         setLogicalSize r =

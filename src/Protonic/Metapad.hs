@@ -203,10 +203,11 @@ joyAllButtons :: Joystick -> ([Word8] -> act) -> Input -> IO (Maybe act)
 joyAllButtons joy mkAct i =
   return . Just . mkAct $ bs
   where
-    bs = mapMaybe work $ joyButtons i
-    work e =
-      boolToMaybe (SDL.joyButtonEventButton e) $
-        SDL.joyButtonEventWhich e == jsId joy
+    bs = mapMaybe toButton $ joyButtons i
+    toButton e =
+      let isId = SDL.joyButtonEventWhich e == jsId joy
+          isState = SDL.joyButtonEventState e == 1 -- Pressed
+      in boolToMaybe (SDL.joyButtonEventButton e) $ isId && isState
 
 joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
 joyAxis joy axis make _ =

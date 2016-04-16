@@ -41,9 +41,10 @@ module Protonic
   , monitorJoystick
   , newJoystickAt, freeJoystick
   , joyHold, joyPressed, joyReleased
-  , joyAllButtons
   , joyAxis, joyAxis2
   , joyAxisChanged, joyAxisChanged2
+  , joyAllButtons
+  , joyAllAxes
   , rumble
   -- * Sound
   , Sound
@@ -61,7 +62,7 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, Proto
 import           Protonic.Data    (Font, Sprite (spsize))
 import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..), InputMotion (..), addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
-                                   joyHold, joyPressed, joyReleased, joyAllButtons, monitorJoystick,
+                                   joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, monitorJoystick,
                                    mousePosAct, mouseButtonAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)

@@ -199,16 +199,6 @@ isTargetButton joy button state e =
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
-joyAllButtons :: Joystick -> ([Word8] -> act) -> Input -> IO (Maybe act)
-joyAllButtons joy mkAct i =
-  return . Just . mkAct $ bs
-  where
-    bs = mapMaybe toButton $ joyButtons i
-    toButton e =
-      let isId = SDL.joyButtonEventWhich e == jsId joy
-          isState = SDL.joyButtonEventState e == 1 -- Pressed
-      in boolToMaybe (SDL.joyButtonEventButton e) $ isId && isState
-
 joyAxis :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
 joyAxis joy axis make _ =
   fmap Just $ make <$> SDL.axisPosition (js joy) (fromIntegral axis)
@@ -237,6 +227,26 @@ joyAxisChanged2 joy a0 a1 make i =
 axisValue :: Joystick -> Word8 -> SDL.JoyAxisEventData -> Maybe Int16
 axisValue joy axis (SDL.JoyAxisEventData jid' axis' v) =
   if jsId joy == jid' && axis == axis' then Just v else Nothing
+
+joyAllButtons :: Joystick -> ([Word8] -> act) -> Input -> IO (Maybe act)
+joyAllButtons joy mkAct i =
+  return . Just . mkAct $ bs
+  where
+    bs = mapMaybe toButton $ joyButtons i
+    toButton e =
+      let isId = SDL.joyButtonEventWhich e == jsId joy
+          isState = SDL.joyButtonEventState e == 1 -- Pressed
+      in boolToMaybe (SDL.joyButtonEventButton e) $ isId && isState
+
+joyAllAxes :: Joystick -> ([(Word8, Int16)] -> act) -> Input -> IO (Maybe act)
+joyAllAxes joy mkAct input =
+  return . Just . mkAct . mapMaybe toAxis . joyAxes $ input
+  where
+    toAxis e =
+      let axis = SDL.joyAxisEventAxis e
+          value = SDL.joyAxisEventValue e
+          isId = SDL.joyAxisEventWhich e == jsId joy
+      in boolToMaybe (axis, value) isId
 
 -- Haptic
 

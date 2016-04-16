@@ -91,7 +91,8 @@ runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
 
 withProtonic :: Config -> (Proto -> IO ()) -> IO ()
 withProtonic config go =
-  bracket_ SDL.initializeAll SDL.quit $
+  bracket_ SDL.initializeAll SDL.quit $ do
+    specialInit
     Mix.withAudio Mix.defaultAudio 256 $
       TTF.withInit $
         withRenderer config $ \r -> do
@@ -100,6 +101,9 @@ withProtonic config go =
             let proto = Proto conf initialState
             go proto
   where
+    specialInit =
+      SDL.setMouseLocationMode SDL.RelativeLocation
+
     withConf r work = do
       let path = "data/font/system.ttf"
           size = 16
@@ -134,7 +138,7 @@ withProtonic config go =
     withRenderer conf work = withW $ withR work
       where
         title = T.pack $ confWinTitle conf
-        
+
         withW = bracket (SDL.createWindow title winConf)
                         SDL.destroyWindow
 

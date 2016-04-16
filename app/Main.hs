@@ -97,7 +97,7 @@ mkGamepad mjs = flip execState newPad $ do
     Nothing -> return ()
   -- Mouse
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
-  modify . addAction $ P.mousePosAct (MousePos . fmap fromIntegral)
+  modify . addAction $ P.mousePosAct MousePos
   modify . addAction $ P.mouseMotionAct MouseMotion
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action

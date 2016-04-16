@@ -29,6 +29,7 @@ import           Protonic.TTFHelper      (renderBlended, sizeText)
 
 data Config = Config
   { winSize :: V2 Int
+  , confWindowMode :: SDL.WindowMode
   , confDebugJoystick :: DebugJoystick
   }
 
@@ -39,6 +40,7 @@ data DebugJoystick = DebugJoystick
 defaultConfig :: Config
 defaultConfig = Config
   { winSize = V2 640 480
+  , confWindowMode = SDL.Windowed
   , confDebugJoystick = DebugJoystick False False
   }
 
@@ -131,14 +133,21 @@ withProtonic config go =
       where
         withW = bracket (SDL.createWindow (T.pack "protonic") winConf)
                         SDL.destroyWindow
-        withR f win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
-                              SDL.destroyRenderer
-                              f
+        withR func win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
+                                 SDL.destroyRenderer
+                                 (\r -> setLogicalSize r >> func r)
         winConf = SDL.defaultWindow
-          { SDL.windowMode = SDL.Windowed
+          { SDL.windowMode = confWindowMode conf
           , SDL.windowResizable = False
           , SDL.windowInitialSize = fromIntegral <$> winSize conf
           }
+
+        setLogicalSize r =
+          case confWindowMode conf of
+            SDL.FullscreenDesktop -> do
+              let size = Just $ SDL.windowInitialSize winConf
+              SDL.rendererLogicalSize r $= size
+            _ -> return ()
 
 -- Scene
 type Update g a = SceneState -> [a] -> g -> ProtoT g

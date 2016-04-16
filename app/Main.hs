@@ -54,6 +54,7 @@ main =
 conf :: P.Config
 conf = P.defaultConfig
   { P.winSize = V2 300 300
+  , P.confWindowMode = SDL.Windowed
   , P.confDebugJoystick = P.DebugJoystick True False
   }
 
@@ -76,7 +77,7 @@ data Action
 mkGamepad :: Maybe Joystick -> Metapad Action
 mkGamepad mjs = flip execState newPad $ do
   -- Keyboard
-  modify . addAction $ P.hold SDL.ScancodeF Go
+  modify . addAction $ P.released SDL.ScancodeF Go
   modify . addAction $ P.pressed SDL.ScancodeReturn Enter
   modify . addAction $ P.pressed SDL.ScancodeEscape Exit
   -- Joystick

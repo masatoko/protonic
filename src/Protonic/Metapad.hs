@@ -106,6 +106,12 @@ mousePosAct :: Integral a => (V2 a -> act) -> Input -> IO (Maybe act)
 mousePosAct f i = return . Just . f $ fromIntegral <$> pos
   where (P pos) = mousePos i
 
+mouseMotionAct :: (V2 Int32 -> act) -> Input -> IO (Maybe act)
+mouseMotionAct mk input =
+  return $ mk . SDL.mouseMotionEventRelMotion <$> headMay es
+  where
+    es = mouseMotion input
+
 mouseButtonAct :: MouseButton -> InputMotion -> act -> Input -> IO (Maybe act)
 mouseButtonAct prtBtn prtMotion act i = return $
   case prtMotion of

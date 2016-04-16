@@ -3,7 +3,7 @@
 module Main where
 
 import           Control.Monad.State
-import           Data.Int            (Int16)
+import           Data.Int            (Int16, Int32)
 import qualified Data.Text           as T
 import           Linear.V2
 import           Linear.V4
@@ -20,10 +20,11 @@ import qualified Protonic            as P
 data Title = Title
 
 data Game = Game
-  { gSprite :: P.Sprite
-  , gSound  :: P.Sound
-  , gDeg    :: !Double
-  , gCount  :: !Int
+  { gSprite  :: P.Sprite
+  , gSound   :: P.Sound
+  , gDeg     :: !Double
+  , gCount   :: !Int
+  , gActions :: [Action]
   }
 
 initGame :: ProtoT Game
@@ -33,7 +34,7 @@ initGame = do
   P.freeFont font
   sound <- P.newSound "data/sample.wav"
   liftIO . putStrLn $ "init Game"
-  return $ Game char sound 0 0
+  return $ Game char sound 0 0 []
 
 freeGame :: MonadIO m => Game -> m ()
 freeGame g = liftIO $ do
@@ -55,7 +56,7 @@ conf :: P.Config
 conf = P.defaultConfig
   { P.confWinSize = V2 300 300
   , P.confWinTitle = "protpnic-app"
-  , P.confWindowMode = SDL.Windowed
+  , P.confWindowMode = SDL.FullscreenDesktop
   , P.confDebugJoystick = P.DebugJoystick True False
   }
 
@@ -73,6 +74,9 @@ data Action
   | Enter
   | Exit
   | AxisLeft Int16 Int16
+  --
+  | MousePos (V2 Int)
+  | MouseMotion (V2 Int32)
   deriving (Eq, Show)
 
 mkGamepad :: Maybe Joystick -> Metapad Action
@@ -90,10 +94,11 @@ mkGamepad mjs = flip execState newPad $ do
         [ (10, Go), (11, Go), (12, Go), (13, Go) ]
       -- Axes
       modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
-
     Nothing -> return ()
   -- Mouse
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
+  modify . addAction $ P.mousePosAct (MousePos . fmap fromIntegral)
+  modify . addAction $ P.mouseMotionAct MouseMotion
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
 titleScene mjs pad = Scene pad update render transit
@@ -120,10 +125,15 @@ mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
 mainScene mjs pad = Scene pad update render transit
   where
     update :: Update Game Action
-    update stt as = execStateT go
+    update stt as g0 = do
+      unless (null as) $ liftIO . print $ as
+      execStateT go g0
       where
         go :: StateT Game ProtoT ()
-        go = mapM_ count as >> setDeg
+        go = do
+          mapM_ count as
+          setDeg
+          unless (null as) $ modify $ \g -> g {gActions = as}
 
         count :: Action -> StateT Game ProtoT ()
         count Go = do
@@ -138,13 +148,16 @@ mainScene mjs pad = Scene pad update render transit
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
     render :: Render Game
-    render _ (Game spr _ d i) = do
+    render _ (Game spr _ d i as) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS spr (P (V2 150 150)) Nothing (Just d)
-      P.printTest (P (V2 10 100)) (V4 255 255 255 255) "Press Enter key to pause"
-      P.printTest (P (V2 10 120)) (V4 255 255 255 255) "Press F key!"
+      P.printTest (P (V2 10 100)) color "Press Enter key to pause"
+      P.printTest (P (V2 10 120)) color "Press F key!"
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'
-      P.printTest (P (V2 10 140)) (V4 255 255 255 255) $ T.pack progress
+      P.printTest (P (V2 10 140)) color $ T.pack progress
+      P.printTest (P (V2 10 160)) color $ T.pack $ show as
+      where
+        color = V4 255 255 255 255
 
     transit _ as g
       | cnt > targetCount = P.next (clearScene mjs cnt pad)

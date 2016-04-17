@@ -77,6 +77,7 @@ data Action
   --
   | MousePos (V2 Int)
   | MouseMotion (V2 Int32)
+  | TouchMotion (V2 Double)
   deriving (Eq, Show)
 
 mkGamepad :: Maybe Joystick -> Metapad Action
@@ -99,6 +100,8 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
   modify . addAction $ P.mousePosAct MousePos
   modify . addAction $ P.mouseMotionAct MouseMotion
+  -- Touch
+  modify . addAction $ P.touchMotionAct TouchMotion
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
 titleScene mjs pad = Scene pad update render transit
@@ -125,9 +128,7 @@ mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
 mainScene mjs pad = Scene pad update render transit
   where
     update :: Update Game Action
-    update stt as g0 = do
-      unless (null as) $ liftIO . print $ as
-      execStateT go g0
+    update stt as g0 = execStateT go g0
       where
         go :: StateT Game ProtoT ()
         go = do

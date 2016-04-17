@@ -101,8 +101,9 @@ withProtonic config go =
             let proto = Proto conf initialState
             go proto
   where
-    specialInit =
-      SDL.setMouseLocationMode SDL.RelativeLocation
+    specialInit = do
+      _ <- SDL.setMouseLocationMode SDL.RelativeLocation
+      return ()
 
     withConf r work = do
       let path = "data/font/system.ttf"

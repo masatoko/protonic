@@ -25,6 +25,7 @@ data Input = Input
   , mouseButton  :: [SDL.MouseButtonEventData]
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
+  , touches      :: [SDL.TouchFingerEventData]
   , modState     :: SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -45,7 +46,7 @@ data InputMotion
 snapshotInput :: MonadIO m => [SDL.Event] -> m Input
 snapshotInput es =
   Input (sel kb) (sel mm) (sel mb)
-        (sel jb) (sel ja)
+        (sel jb) (sel ja) (sel td)
         <$> SDL.getModState
         <*> SDL.getKeyboardState
         <*> SDL.getAbsoluteMouseLocation
@@ -65,7 +66,9 @@ snapshotInput es =
     jb _ = Nothing
     ja (SDL.JoyAxisEvent d) = Just d
     ja _ = Nothing
-
+    -- Touch
+    td (SDL.TouchFingerEvent d) = Just d
+    td _ = Nothing
 
 newPad :: Metapad a
 newPad = Metapad []
@@ -128,6 +131,14 @@ mouseButtonAct prtBtn prtMotion act i = return $
     isTarget e =
       SDL.mouseButtonEventButton e == btn
         && SDL.mouseButtonEventMotion e == motion
+
+-- Touch
+
+touchMotionAct :: (V2 Double -> act) -> Input -> IO (Maybe act)
+touchMotionAct mk input =
+  return $ mk . fmap realToFrac . SDL.touchFingerEventRelMotion <$> headMay es
+  where
+    es = touches input
 
 -- Joystick
 

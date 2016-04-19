@@ -21,7 +21,6 @@ data Title = Title
 
 data Game = Game
   { gSprite  :: P.Sprite
-  , gSound   :: P.Sound
   , gDeg     :: !Double
   , gCount   :: !Int
   , gActions :: [Action]
@@ -32,14 +31,12 @@ initGame = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   P.freeFont font
-  sound <- P.newSound "data/sample.wav"
   liftIO . putStrLn $ "init Game"
-  return $ Game char sound 0 0 []
+  return $ Game char 0 0 []
 
 freeGame :: MonadIO m => Game -> m ()
 freeGame g = liftIO $ do
   P.freeSprite . gSprite $ g
-  P.freeSound . gSound $ g
   putStrLn "free Game"
 
 main :: IO ()
@@ -139,7 +136,6 @@ mainScene mjs pad = Scene pad update render transit
         count :: Action -> StateT Game ProtoT ()
         count Go = do
           modify (\a -> let c = gCount a in a {gCount = c + 1})
-          P.play =<< gets gSound
           c <- gets gCount
           let strength = fromIntegral c * 0.2
               len = fromIntegral c * 100
@@ -149,7 +145,7 @@ mainScene mjs pad = Scene pad update render transit
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
     render :: Render Game
-    render _ (Game spr _ d i as) = do
+    render _ (Game spr d i as) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS spr (P (V2 150 150)) Nothing (Just d)
       P.printTest (P (V2 10 100)) color "Press Enter key to pause"

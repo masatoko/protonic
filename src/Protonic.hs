@@ -48,12 +48,6 @@ module Protonic
   , joyAllButtons
   , joyAllAxes
   , rumble
-  -- * Sound
-  , Sound
-  , newSound
-  , freeSound
-  , play
-  , playOn
   ) where
 
 import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, ProtoT,
@@ -69,4 +63,3 @@ import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..), I
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)
 import           Protonic.Sprite  (freeFont, freeSprite, newFont, newSprite)
-import           Protonic.Sound   (Sound, newSound, freeSound, play, playOn)

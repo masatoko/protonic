@@ -28,7 +28,7 @@ library
   -- other-extensions:
   pkgconfig-depends:   sdl2 >= 2
                      , SDL2_ttf >= 2
-  build-depends:       base >=4.8 && <4.9
+  build-depends:       base >=4.8 && <5.0
                      , sdl2 >= 2
                      , sdl2-ttf >= 0.2.2
                      , sdl2-mixer

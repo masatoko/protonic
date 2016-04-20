@@ -75,6 +75,7 @@ data Action
   | Enter
   | Exit
   | AxisLeft Int16 Int16
+  | PUp | HUp | RUp
   --
   | MousePos (V2 Int)
   | MouseMotion (V2 Int32)
@@ -96,6 +97,10 @@ mkGamepad mjs = flip execState newPad $ do
         [ (10, Go), (11, Go), (12, Go), (13, Go) ]
       -- Axes
       modify . addAction $ P.joyAxis2 js 0 1 AxisLeft
+      -- Hat
+      modify . addAction $ P.joyHat P.HDUp P.Pressed PUp
+      modify . addAction $ P.joyHat P.HDUp P.Released RUp
+      modify . addAction $ P.joyHat P.HDUp P.Holded HUp
     Nothing -> return ()
   -- Mouse
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
@@ -108,7 +113,9 @@ titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
 titleScene mjs pad = Scene pad update render transit
   where
     update :: Update Title Action
-    update _ as = return
+    update _ as t = do
+      liftIO . print $ as
+      return t
 
     render :: Render Title
     render _ _ = do

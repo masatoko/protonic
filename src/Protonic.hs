@@ -34,6 +34,7 @@ module Protonic
   , Input
   , MouseButton (..)
   , InputMotion (..)
+  , HatDir (..)
   , hold, pressed, released
   , mousePosAct
   , mouseMotionAct
@@ -47,6 +48,7 @@ module Protonic
   , joyAxisChanged, joyAxisChanged2
   , joyAllButtons
   , joyAllAxes
+  , joyHat
   , rumble
   ) where
 
@@ -56,9 +58,10 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, Proto
                                    end, next, nextNew, printsys, push, pushNew,
                                    runProtoT, runScene, withProtonic, screenSize)
 import           Protonic.Data    (Font, Sprite (spsize))
-import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..), InputMotion (..), addAction,
+import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
+                                   InputMotion (..), HatDir (..), addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
-                                   joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, monitorJoystick,
+                                   joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, joyHat, monitorJoystick,
                                    mousePosAct, mouseMotionAct, mouseButtonAct, touchMotionAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, printTest)

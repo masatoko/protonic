@@ -202,18 +202,18 @@ runScene = go (SceneState 0)
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g)
 sceneLoop iniG iniS scene =
-  loop iniG iniS =<< SDL.ticks
+  loop Nothing iniG iniS =<< SDL.ticks
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     transit = sceneTransit scene
     --
-    loop g s t = do
+    loop mPreInput g s t = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
-      actions <- makeActions events pad
+      (actions, curInput) <- makeActions mPreInput events pad
       g' <- update s actions g
       -- Rendering
       preRender
@@ -230,7 +230,7 @@ sceneLoop iniG iniS scene =
       let s' = advance s
       -- Go next loop
       case mTrans of
-        Nothing    -> loop g' s' t'
+        Nothing    -> loop (Just curInput) g' s' t'
         Just trans -> return (g', s', trans)
 
     -- TODO: Implement frame skip

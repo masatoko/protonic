@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Protonic.Metapad where
@@ -5,8 +6,9 @@ module Protonic.Metapad where
 import qualified Control.Exception      as E
 import           Control.Monad          (forM_)
 import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Data.Bits              (testBit)
 import           Data.Int               (Int16, Int32)
-import           Data.Maybe             (catMaybes, mapMaybe)
+import           Data.Maybe             (catMaybes, mapMaybe, fromMaybe)
 import qualified Data.Vector            as V
 import           Data.Word              (Word8, Word32)
 import           Foreign.C.Types        (CInt)
@@ -17,6 +19,8 @@ import           Safe                   (headMay)
 import qualified SDL
 import qualified SDL.Haptic as HAP
 
+type HatValue = Word8
+
 data Metapad a = Metapad [Input -> IO (Maybe a)]
 
 data Input = Input
@@ -26,6 +30,8 @@ data Input = Input
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
   , touches      :: [SDL.TouchFingerEventData]
+  , curHat       :: HatValue
+  , preHat       :: HatValue
   , modState     :: SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -35,18 +41,26 @@ data Input = Input
 data MouseButton
   = ButtonLeft
   | ButtonRight
-  deriving (Eq, Show, Read)
+  deriving (Show, Read, Eq, Ord)
 
 data InputMotion
   = Pressed
   | Released
   | Holded
-  deriving (Eq, Show, Read)
+  deriving (Show, Read, Eq, Ord)
 
-snapshotInput :: MonadIO m => [SDL.Event] -> m Input
-snapshotInput es =
+data HatDir
+  = HDUp
+  | HDRight
+  | HDDown
+  | HDLeft
+  deriving (Show, Read, Eq, Ord, Enum)
+
+snapshotInput :: MonadIO m => Maybe Input -> [SDL.Event] -> m Input
+snapshotInput mPreInput es =
   Input (sel kb) (sel mm) (sel mb)
         (sel jb) (sel ja) (sel td)
+        curHat' preHat'
         <$> SDL.getModState
         <*> SDL.getKeyboardState
         <*> SDL.getAbsoluteMouseLocation
@@ -69,6 +83,14 @@ snapshotInput es =
     -- Touch
     td (SDL.TouchFingerEvent d) = Just d
     td _ = Nothing
+    --
+    preHat' = fromMaybe 0 $ curHat <$> mPreInput
+    curHat' = case headMay $ sel hat of
+                Nothing -> preHat'
+                Just v  -> v
+      where
+        hat (SDL.JoyHatEvent d) = Just $ SDL.joyHatEventValue d
+        hat _                   = Nothing
 
 newPad :: Metapad a
 newPad = Metapad []
@@ -76,11 +98,12 @@ newPad = Metapad []
 addAction :: (Input -> IO (Maybe a)) -> Metapad a -> Metapad a
 addAction f (Metapad fs) = Metapad (f:fs)
 
-makeActions :: MonadIO m => [SDL.Event] -> Metapad a -> m [a]
-makeActions es (Metapad fs) =
+makeActions :: MonadIO m => Maybe Input -> [SDL.Event] -> Metapad a -> m ([a], Input)
+makeActions mPreInput es (Metapad fs) =
   liftIO $ do
-    i <- snapshotInput es
-    catMaybes <$> mapM (\f -> f i) fs
+    i <- snapshotInput mPreInput es
+    as <- catMaybes <$> mapM (\f -> f i) fs
+    return (as, i)
 
 -- * Helper
 
@@ -264,6 +287,23 @@ joyAllAxes joy mkAct input =
           value = SDL.joyAxisEventValue e
           isId = SDL.joyAxisEventWhich e == jsId joy
       in boolToMaybe (axis, value) isId
+
+-- Hat
+
+joyHat :: HatDir -> InputMotion -> act -> Input -> IO (Maybe act)
+joyHat hatDir motion act input =
+  return $ boolToMaybe act matchMotion
+  where
+    hatOn :: HatValue -> Bool
+    hatOn v = testBit v $ fromEnum hatDir
+    --
+    pPre = hatOn $ preHat input
+    pCur = hatOn $ curHat input
+    matchMotion
+      | pPre && pCur = Holded == motion
+      | pCur         = Pressed == motion
+      | pPre         = Released == motion
+      | otherwise    = False
 
 -- Haptic
 

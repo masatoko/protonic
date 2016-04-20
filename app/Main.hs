@@ -2,6 +2,7 @@
 
 module Main where
 
+import           System.Environment (getArgs)
 import           Control.Monad.State
 import           Data.Int            (Int16, Int32)
 import qualified Data.Text           as T
@@ -40,7 +41,10 @@ freeGame g = liftIO $ do
   putStrLn "free Game"
 
 main :: IO ()
-main =
+main = do
+  as <- getArgs
+  let opt = (`elem` as)
+      conf = mkConf (opt "button") (opt "axis") (opt "hat")
   withProtonic conf $ \proto -> do
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
@@ -48,14 +52,14 @@ main =
       runScene (titleScene mjs gamepad) Title
     maybe (return ()) P.freeJoystick mjs
     return ()
-
-conf :: P.Config
-conf = P.defaultConfig
-  { P.confWinSize = V2 300 300
-  , P.confWinTitle = "protpnic-app"
-  , P.confWindowMode = SDL.FullscreenDesktop
-  , P.confDebugJoystick = P.DebugJoystick True False
-  }
+  where
+    mkConf pBtn pAxis pHat =
+      P.defaultConfig
+        { P.confWinSize = V2 300 300
+        , P.confWinTitle = "protpnic-app"
+        , P.confWindowMode = SDL.Windowed
+        , P.confDebugJoystick = P.DebugJoystick pBtn pAxis pHat
+        }
 
     -- monitor mjs =
     --   case mjs of
@@ -104,12 +108,7 @@ titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
 titleScene mjs pad = Scene pad update render transit
   where
     update :: Update Title Action
-    update _ as t = do
-      mapM_ work as
-      return t
-      where
-        work (AxisLeft x y) = liftIO $ print (x,y)
-        work _              = return ()
+    update _ as = return
 
     render :: Render Title
     render _ _ = do

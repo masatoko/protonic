@@ -36,14 +36,16 @@ data Config = Config
 
 data DebugJoystick = DebugJoystick
   { djVisButton :: Bool
-  , djVisAxis :: Bool}
+  , djVisAxis :: Bool
+  , djVisHat :: Bool
+  }
 
 defaultConfig :: Config
 defaultConfig = Config
   { confWinSize = V2 640 480
   , confWinTitle = "protonic"
   , confWindowMode = SDL.Windowed
-  , confDebugJoystick = DebugJoystick False False
+  , confDebugJoystick = DebugJoystick False False False
   }
 
 type Time = Word32
@@ -310,9 +312,19 @@ procEvents es = go =<< asks debugJoystick
         work :: SDL.EventPayload -> ProtoT ()
         work (SDL.WindowClosedEvent _) = liftIO exitSuccess
         work SDL.QuitEvent             = liftIO exitSuccess
-        work (SDL.JoyButtonEvent d)    = when (djVisButton dj) $ liftIO . print $ d
-        work (SDL.JoyAxisEvent d)      = when (djVisAxis dj) $ liftIO . print $ d
+        work (SDL.JoyButtonEvent d)    =
+          when (djVisButton dj) $ liftIO . print $ d
+        work (SDL.JoyAxisEvent d)      =
+          when (djVisAxis dj) $ liftIO . putStrLn . showJoyAxisEventData $ d
+        work (SDL.JoyHatEvent d)       =
+          when (djVisHat dj) $ liftIO . putStrLn . showJoyHatEventData $ d
         work _ = return ()
+
+    showJoyAxisEventData (SDL.JoyAxisEventData jid axis value) =
+      "Axis: " ++ show jid ++ " @ " ++ show axis ++ " - " ++ show value
+
+    showJoyHatEventData (SDL.JoyHatEventData jid hat value) =
+      "Hat: " ++ show jid ++ " @ " ++ show hat ++ " - " ++ show value
 
 --
 

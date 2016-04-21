@@ -32,6 +32,7 @@ data Config = Config
   { confWinSize :: V2 Int
   , confWinTitle :: String
   , confWindowMode :: SDL.WindowMode
+  , confDebugPrintSystem :: Bool
   , confDebugJoystick :: DebugJoystick
   , confNumAverageTime :: Int
   }
@@ -47,6 +48,7 @@ defaultConfig = Config
   { confWinSize = V2 640 480
   , confWinTitle = "protonic"
   , confWindowMode = SDL.Windowed
+  , confDebugPrintSystem = False
   , confDebugJoystick = DebugJoystick False False False
   , confNumAverageTime = 60
   }
@@ -123,7 +125,7 @@ withProtonic config go =
               , systemFont = font
               , fontPath = path
               , fontSize = size
-              , debugPrintSystem = True
+              , debugPrintSystem = confDebugPrintSystem config
               , debugJoystick = confDebugJoystick config
               , numAverateTime = confNumAverageTime config
               }
@@ -254,9 +256,11 @@ sceneLoop iniG iniS scene =
         in s {frameTimes = V.take n ts}
       when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
       -- Print updating + rendering time and waiting time for debug
-      if tFPS > dt
-        then printsys . T.pack $ replicate (fromIntegral dt) '*' ++ replicate (fromIntegral tWait) '-'
-        else printsys . T.pack $ replicate (fromIntegral tFPS) '*'
+      p <- asks debugPrintSystem
+      when p $
+        if tFPS > dt
+          then printsys . T.pack $ replicate (fromIntegral dt) '*' ++ replicate (fromIntegral tWait) '-'
+          else printsys . T.pack $ replicate (fromIntegral tFPS) '*'
 
     preRender :: ProtoT ()
     preRender = do

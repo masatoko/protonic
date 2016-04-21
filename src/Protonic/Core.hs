@@ -33,6 +33,7 @@ data Config = Config
   , confWinTitle :: String
   , confWindowMode :: SDL.WindowMode
   , confDebugJoystick :: DebugJoystick
+  , confNumAverageTime :: Int
   }
 
 data DebugJoystick = DebugJoystick
@@ -47,6 +48,7 @@ defaultConfig = Config
   , confWinTitle = "protonic"
   , confWindowMode = SDL.Windowed
   , confDebugJoystick = DebugJoystick False False False
+  , confNumAverageTime = 60
   }
 
 type Time = Word32
@@ -62,6 +64,7 @@ data ProtoConfig = ProtoConfig
   -- Debug
   , debugPrintSystem :: Bool
   , debugJoystick    :: DebugJoystick
+  , numAverateTime   :: Int
   }
 
 data ProtoState = ProtoState
@@ -122,6 +125,7 @@ withProtonic config go =
               , fontSize = size
               , debugPrintSystem = True
               , debugJoystick = confDebugJoystick config
+              , numAverateTime = confNumAverageTime config
               }
 
     withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
@@ -244,9 +248,10 @@ sceneLoop iniG iniS scene =
       let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
           tWait = tFPS - dt
+      n <- asks numAverateTime
       modify $ \s -> let
         ts = V.cons dt $ frameTimes s
-        in s {frameTimes = V.take 60 ts}
+        in s {frameTimes = V.take n ts}
       when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
       -- Print updating + rendering time and waiting time for debug
       if tFPS > dt
@@ -342,7 +347,9 @@ averageTime = do
   ts <- gets frameTimes
   let a = fromIntegral $ V.sum ts
       n = V.length ts
-  return $ a `div` n
+  return $ if n == 0
+             then 0
+             else a `div` n
 
 assert :: Bool -> IO ()
 assert = flip unless $ error "Assertion failed"

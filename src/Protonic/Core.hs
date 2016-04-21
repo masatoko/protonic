@@ -10,6 +10,7 @@ import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Text               (Text)
 import qualified Data.Text               as T
+import qualified Data.Vector.Unboxed     as V
 import           Data.Word               (Word32)
 import           Linear.Affine           (Point (..))
 import           Linear.V2
@@ -70,6 +71,7 @@ data ProtoState = ProtoState
   , updatedTime  :: !Time
   --
   , actualFPS    :: !Int
+  , frameTimes   :: V.Vector Time
   } deriving Show
 
 data Proto = Proto ProtoConfig ProtoState
@@ -82,6 +84,7 @@ initialState = ProtoState
   , updatedTime = 0
   --
   , actualFPS = 0
+  , frameTimes = V.empty
   }
 
 newtype ProtoT a = ProtoT {
@@ -241,6 +244,9 @@ sceneLoop iniG iniS scene =
       let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
           dt = if t' < t then 0 else t' - t
           tWait = tFPS - dt
+      modify $ \s -> let
+        ts = V.cons dt $ frameTimes s
+        in s {frameTimes = V.take 60 ts}
       when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
       -- Print updating + rendering time and waiting time for debug
       if tFPS > dt
@@ -330,6 +336,13 @@ procEvents es = go =<< asks debugJoystick
 
 screenSize :: ProtoT (V2 Int)
 screenSize = asks scrSize
+
+averageTime :: ProtoT Int
+averageTime = do
+  ts <- gets frameTimes
+  let a = fromIntegral $ V.sum ts
+      n = V.length ts
+  return $ a `div` n
 
 assert :: Bool -> IO ()
 assert = flip unless $ error "Assertion failed"

@@ -15,6 +15,7 @@ module Protonic
   , continue, end, nextNew, next, pushNew, push
   --
   , screenSize
+  , averageTime
   -- Data
   , Font
   , Sprite (spsize)
@@ -56,7 +57,8 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, Proto
                                    Render, Scene (..), SceneState (..), Transit,
                                    Transition, Update, continue, defaultConfig,
                                    end, next, nextNew, printsys, push, pushNew,
-                                   runProtoT, runScene, withProtonic, screenSize)
+                                   runProtoT, runScene, withProtonic, screenSize,
+                                   averageTime)
 import           Protonic.Data    (Font, Sprite (spsize))
 import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    InputMotion (..), HatDir (..), addAction,

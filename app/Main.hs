@@ -131,7 +131,9 @@ mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
 mainScene mjs pad = Scene pad update render transit
   where
     update :: Update Game Action
-    update stt as g0 = execStateT go g0
+    update stt as g0 = do
+      when (frameCount stt `mod` 60 == 0) $ P.averageTime >>= liftIO . print
+      execStateT go g0
       where
         go :: StateT Game ProtoT ()
         go = do

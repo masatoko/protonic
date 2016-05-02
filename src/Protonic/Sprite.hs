@@ -1,6 +1,7 @@
 module Protonic.Sprite
 ( newFont
 , freeFont
+, ascent, descent
 , GlyphMetrics (..)
 , glyphMetrics
 , newSprite
@@ -30,6 +31,14 @@ newFont size = do
 freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =
   liftIO $ TTF.closeFont font
+
+ascent :: MonadIO m => Font -> m Int
+ascent (Font font) =
+  liftIO $ TTF.getFontAscent font
+
+descent :: MonadIO m => Font -> m Int
+descent (Font font) =
+  liftIO $ TTF.getFontDescent font
 
 glyphMetrics :: MonadIO m => Font -> Char -> m GlyphMetrics
 glyphMetrics (Font font) c =

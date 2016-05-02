@@ -74,6 +74,13 @@ main = do
 testGlyphMetrics :: ProtoT ()
 testGlyphMetrics = do
   font <- P.newFont 10
+  --
+  asc <- P.ascent font
+  dsc <- P.descent font
+  liftIO $ do
+    putStrLn $ "Ascent: " ++ show asc
+    putStrLn $ "Descent: " ++ show dsc
+  --
   work font '_'
   work font '|'
   mapM_ (work font) ['a'..'z']

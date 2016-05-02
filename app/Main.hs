@@ -48,7 +48,8 @@ main = do
   withProtonic conf $ \proto -> do
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
-    _ <- runProtoT proto $
+    _ <- runProtoT proto $ do
+      testGlyphMetrics
       runScene (titleScene mjs gamepad) Title
     maybe (return ()) P.freeJoystick mjs
     return ()
@@ -69,6 +70,18 @@ main = do
     --       SDL.pumpEvents
     --       P.monitorJoystick js
     --       threadDelay 100000
+
+testGlyphMetrics :: ProtoT ()
+testGlyphMetrics = do
+  font <- P.newFont 10
+  work font '_'
+  work font '|'
+  mapM_ (work font) ['a'..'z']
+  P.freeFont font
+  where
+    work font c = do
+      gm <- P.glyphMetrics font c
+      liftIO $ putStrLn $ c:" : " ++ show gm
 
 data Action
   = Go

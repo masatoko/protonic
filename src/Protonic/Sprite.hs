@@ -1,4 +1,11 @@
-module Protonic.Sprite where
+module Protonic.Sprite
+( newFont
+, freeFont
+, GlyphMetrics (..)
+, glyphMetrics
+, newSprite
+, freeSprite
+) where
 
 import           Control.Exception    (bracket)
 import           Control.Monad.Reader
@@ -12,7 +19,7 @@ import qualified SDL
 
 import           Protonic.Core
 import           Protonic.Data        (Font (..), Sprite (..))
-import           Protonic.TTFHelper   (renderBlended, sizeText)
+import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..), rawGlyphMetrics)
 
 -- Make font from TTF (default path)
 newFont :: Int -> ProtoT Font
@@ -23,6 +30,10 @@ newFont size = do
 freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =
   liftIO $ TTF.closeFont font
+
+glyphMetrics :: MonadIO m => Font -> Char -> m GlyphMetrics
+glyphMetrics (Font font) c =
+  liftIO $ rawGlyphMetrics font c
 
 -- TODO: Change color
 newSprite :: Font -> V4 Word8 -> Text -> ProtoT Sprite

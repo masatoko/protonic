@@ -58,6 +58,7 @@ type Time = Word32
 data ProtoConfig = ProtoConfig
   { graphFPS         :: Int
   , scrSize          :: V2 Int
+  , window           :: SDL.Window
   -- Resource
   , renderer         :: SDL.Renderer
   , systemFont       :: TTFFont
@@ -104,9 +105,9 @@ withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $ do
     specialInit
     TTF.withInit $
-      withRenderer config $ \r -> do
+      withWinRenderer config $ \win r -> do
         SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
-        withConf r $ \conf -> do
+        withConf win r $ \conf -> do
           let proto = Proto conf initialState
           go proto
   where
@@ -114,13 +115,14 @@ withProtonic config go =
       _ <- SDL.setMouseLocationMode SDL.RelativeLocation
       return ()
 
-    withConf r work = do
+    withConf win r work = do
       let path = "data/font/system.ttf"
           size = 16
       bracket (openFont path size) TTF.closeFont $ \font ->
         work ProtoConfig
               { graphFPS = 60
               , scrSize = confWinSize config
+              , window = win
               , renderer = r
               , systemFont = font
               , fontPath = path
@@ -130,8 +132,8 @@ withProtonic config go =
               , numAverateTime = confNumAverageTime config
               }
 
-    withRenderer :: Config -> (SDL.Renderer -> IO a) -> IO a
-    withRenderer conf work = withW $ withR work
+    withWinRenderer :: Config -> (SDL.Window -> SDL.Renderer -> IO a) -> IO a
+    withWinRenderer conf work = withW $ withR work
       where
         title = T.pack $ confWinTitle conf
 
@@ -140,7 +142,7 @@ withProtonic config go =
 
         withR func win = bracket (SDL.createRenderer win (-1) SDL.defaultRenderer)
                                  SDL.destroyRenderer
-                                 (\r -> setLogicalSize r >> func r)
+                                 (\r -> setLogicalSize r >> func win r)
 
         winConf = SDL.defaultWindow
           { SDL.windowMode = confWindowMode conf

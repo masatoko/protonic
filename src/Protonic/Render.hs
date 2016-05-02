@@ -30,7 +30,11 @@ clearBy color = do
   SDL.clear r
 
 renderS :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
-renderS (Sprite tex size) pos mSize mDeg =
+renderS spr pos mSize mDeg =
+  renderS' spr pos mSize mDeg Nothing
+
+renderS' :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> Maybe (Point V2 CInt) -> ProtoT ()
+renderS' (Sprite tex size) pos mSize mDeg mRotCenter =
   copy mDeg =<< asks renderer
   where
     pos' = fromIntegral <$> pos
@@ -38,10 +42,9 @@ renderS (Sprite tex size) pos mSize mDeg =
     dest = Just $ SDL.Rectangle pos' size'
     --
     copy (Just deg) r =
-      SDL.copyEx r tex Nothing dest deg' pRot (V2 False False)
+      SDL.copyEx r tex Nothing dest deg' mRotCenter (V2 False False)
       where
         deg' = realToFrac deg
-        pRot = Just $ P $ (`div` 2) <$> size'
     copy Nothing r = SDL.copy r tex Nothing dest
 
 drawLine :: Point V2 Int -> Point V2 Int -> ProtoT ()

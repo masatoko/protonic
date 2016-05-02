@@ -155,6 +155,8 @@ mainScene mjs pad = Scene pad update render transit
     update :: Update Game Action
     update stt as g0 = do
       when (frameCount stt `mod` 60 == 0) $ P.averageTime >>= liftIO . print
+      let alpha = fromIntegral $ frameCount stt
+      P.setAlphaMod (gImgSprite g0) alpha
       execStateT go g0
       where
         go :: StateT Game ProtoT ()

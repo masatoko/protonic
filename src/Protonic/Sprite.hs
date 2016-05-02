@@ -7,6 +7,8 @@ module Protonic.Sprite
 , newSprite
 , newSpriteFromImage
 , freeSprite
+, setBlendMode
+, setAlphaMod
 ) where
 
 import           Control.Exception    (bracket)
@@ -66,3 +68,11 @@ newSpriteFromImage path size = do
   r <- asks renderer
   texture <- SDL.Image.loadTexture r path
   return $ Sprite texture $ fromIntegral <$> size
+
+setBlendMode :: MonadIO m => Sprite -> SDL.BlendMode -> m ()
+setBlendMode s mode =
+  SDL.textureBlendMode (sptex s) $= mode
+
+setAlphaMod :: MonadIO m => Sprite -> Word8 -> m ()
+setAlphaMod s alpha =
+  SDL.textureAlphaMod (sptex s) $= alpha

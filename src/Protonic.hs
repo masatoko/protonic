@@ -28,7 +28,7 @@ module Protonic
   -- Sprite
   , newFont, freeFont
   , ascent, descent
-  , newSprite, freeSprite
+  , newSprite, newSpriteFromImage, freeSprite
   , GlyphMetrics (..), glyphMetrics
   -- Metapad
   , Metapad
@@ -69,4 +69,4 @@ import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    mousePosAct, mouseMotionAct, mouseButtonAct, touchMotionAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, renderS', printTest)
-import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, newFont, newSprite, GlyphMetrics (..), glyphMetrics)
+import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, newFont, newSprite, newSpriteFromImage, GlyphMetrics (..), glyphMetrics)

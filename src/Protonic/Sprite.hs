@@ -5,6 +5,7 @@ module Protonic.Sprite
 , GlyphMetrics (..)
 , glyphMetrics
 , newSprite
+, newSpriteFromImage
 , freeSprite
 ) where
 
@@ -17,6 +18,8 @@ import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF  as TTF
 import qualified SDL
+import qualified SDL.Image
+import           SDL                  (($=), get)
 
 import           Protonic.Core
 import           Protonic.Data        (Font (..), Sprite (..))
@@ -57,3 +60,9 @@ newSprite (Font font) color text = do
 
 freeSprite :: MonadIO m => Sprite -> m ()
 freeSprite (Sprite t _) = SDL.destroyTexture t
+
+newSpriteFromImage :: FilePath -> V2 Int -> ProtoT Sprite
+newSpriteFromImage path size = do
+  r <- asks renderer
+  texture <- SDL.Image.loadTexture r path
+  return $ Sprite texture $ fromIntegral <$> size

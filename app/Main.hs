@@ -22,6 +22,7 @@ data Title = Title
 
 data Game = Game
   { gSprite  :: P.Sprite
+  , gImgSprite :: P.Sprite
   , gDeg     :: !Double
   , gCount   :: !Int
   , gActions :: [Action]
@@ -31,9 +32,10 @@ initGame :: ProtoT Game
 initGame = do
   font <- P.newFont 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
+  img <- P.newSpriteFromImage "data/img.png" (pure 48)
   P.freeFont font
   liftIO . putStrLn $ "init Game"
-  return $ Game char 0 0 []
+  return $ Game char img 0 0 []
 
 freeGame :: MonadIO m => Game -> m ()
 freeGame g = liftIO $ do
@@ -173,9 +175,10 @@ mainScene mjs pad = Scene pad update render transit
         setDeg = modify (\g -> g {gDeg = fromIntegral (frameCount stt `mod` 360)})
 
     render :: Render Game
-    render _ (Game spr d i as) = do
+    render _ (Game spr img d i as) = do
       P.clearBy $ V4 0 0 0 255
       P.renderS spr (P (V2 150 150)) Nothing (Just d)
+      P.renderS img (P (V2 10 200)) Nothing Nothing
       P.printTest (P (V2 10 100)) color "Press Enter key to pause"
       P.printTest (P (V2 10 120)) color "Press F key!"
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'

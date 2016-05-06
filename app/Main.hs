@@ -101,6 +101,7 @@ data Action
   --
   | MousePos (V2 Int)
   | MouseMotion (V2 Int32)
+  | MouseWheel (V2 Int32)
   | TouchMotion (V2 Double)
   deriving (Eq, Show)
 
@@ -128,6 +129,7 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
   modify . addAction $ P.mousePosAct MousePos
   modify . addAction $ P.mouseMotionAct MouseMotion
+  modify . addAction $ P.mouseWheelAct MouseWheel
   -- Touch
   modify . addAction $ P.touchMotionAct TouchMotion
 

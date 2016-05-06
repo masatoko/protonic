@@ -27,6 +27,7 @@ data Input = Input
   { keyboard     :: [SDL.KeyboardEventData]
   , mouseMotion  :: [SDL.MouseMotionEventData]
   , mouseButton  :: [SDL.MouseButtonEventData]
+  , mouseWheel   :: [SDL.MouseWheelEventData]
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
   , touches      :: [SDL.TouchFingerEventData]
@@ -58,7 +59,7 @@ data HatDir
 
 snapshotInput :: MonadIO m => Maybe Input -> [SDL.Event] -> m Input
 snapshotInput mPreInput es =
-  Input (sel kb) (sel mm) (sel mb)
+  Input (sel kb) (sel mm) (sel mb) (sel mw)
         (sel jb) (sel ja) (sel td)
         curHat' preHat'
         <$> SDL.getModState
@@ -75,6 +76,8 @@ snapshotInput mPreInput es =
     mm _ = Nothing
     mb (SDL.MouseButtonEvent d) = Just d
     mb _ = Nothing
+    mw (SDL.MouseWheelEvent d) = Just d
+    mw _ = Nothing
     -- Joystick
     jb (SDL.JoyButtonEvent d) = Just d
     jb _ = Nothing
@@ -154,6 +157,12 @@ mouseButtonAct prtBtn prtMotion act i = return $
     isTarget e =
       SDL.mouseButtonEventButton e == btn
         && SDL.mouseButtonEventMotion e == motion
+
+mouseWheelAct :: (V2 Int32 -> act) -> Input -> IO (Maybe act)
+mouseWheelAct mk input =
+  return $ mk . SDL.mouseWheelEventPos <$> headMay es
+  where
+    es = mouseWheel input
 
 -- Touch
 

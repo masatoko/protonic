@@ -43,6 +43,7 @@ module Protonic
   , mousePosAct
   , mouseMotionAct
   , mouseButtonAct
+  , mouseWheelAct
   , touchMotionAct
   , Joystick
   , monitorJoystick
@@ -67,7 +68,7 @@ import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    InputMotion (..), HatDir (..), addAction,
                                    freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
                                    joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, joyHat, monitorJoystick,
-                                   mousePosAct, mouseMotionAct, mouseButtonAct, touchMotionAct, newJoystickAt, newPad, pressed,
+                                   mousePosAct, mouseMotionAct, mouseButtonAct, mouseWheelAct, touchMotionAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, renderS', printTest)
 import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, setBlendMode, setAlphaMod,

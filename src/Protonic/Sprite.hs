@@ -80,6 +80,6 @@ setAlphaMod :: MonadIO m => Sprite -> Word8 -> m ()
 setAlphaMod s alpha =
   SDL.textureAlphaMod (sptex s) $= alpha
 
-setColorMod :: MonadIO m => Sprite -> Word8 -> Word8 -> Word8 -> m ()
-setColorMod s r g b =
-  SDL.textureColorMod (sptex s) $= V3 r g b
+setColorMod :: MonadIO m => Sprite -> V3 Word8 -> m ()
+setColorMod s rgb =
+  SDL.textureColorMod (sptex s) $= rgb

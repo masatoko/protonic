@@ -29,7 +29,7 @@ module Protonic
   , newFont, freeFont
   , ascent, descent
   , newSprite, newSpriteFromImage, freeSprite
-  , setBlendMode, setAlphaMod
+  , setBlendMode, setAlphaMod, setColorMod
   , GlyphMetrics (..), glyphMetrics
   -- Metapad
   , Metapad
@@ -71,5 +71,5 @@ import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    mousePosAct, mouseMotionAct, mouseButtonAct, mouseWheelAct, touchMotionAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
 import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, renderS', printTest)
-import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, setBlendMode, setAlphaMod,
+import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, setBlendMode, setAlphaMod, setColorMod,
                                    newFont, newSprite, newSpriteFromImage, GlyphMetrics (..), glyphMetrics)

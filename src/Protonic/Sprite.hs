@@ -7,8 +7,10 @@ module Protonic.Sprite
 , newSprite
 , newSpriteFromImage
 , freeSprite
+-- ** Texture State
 , setBlendMode
 , setAlphaMod
+, setColorMod
 ) where
 
 import           Control.Exception    (bracket)
@@ -16,6 +18,7 @@ import           Control.Monad.Reader
 import           Data.Text            (Text)
 import           Data.Word            (Word8)
 import           Linear.V2
+import           Linear.V3
 import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF  as TTF
@@ -76,3 +79,7 @@ setBlendMode s mode =
 setAlphaMod :: MonadIO m => Sprite -> Word8 -> m ()
 setAlphaMod s alpha =
   SDL.textureAlphaMod (sptex s) $= alpha
+
+setColorMod :: MonadIO m => Sprite -> Word8 -> Word8 -> Word8 -> m ()
+setColorMod s r g b =
+  SDL.textureColorMod (sptex s) $= V3 r g b

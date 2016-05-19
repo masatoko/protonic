@@ -1,5 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE Strict #-}
 
 module Protonic.Metapad where
 

@@ -1,7 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE StrictData #-}
-{-# LANGUAGE Strict #-}
 
 module Protonic.Metapad where
 
@@ -33,9 +31,9 @@ data Input = Input
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
   , touches      :: [SDL.TouchFingerEventData]
-  , curHat       :: HatValue
-  , preHat       :: HatValue
-  , modState     :: SDL.KeyModifier
+  , curHat       :: !HatValue
+  , preHat       :: !HatValue
+  , modState     :: !SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
   , mouseButtons :: SDL.MouseButton -> Bool
@@ -179,9 +177,9 @@ touchMotionAct mk input =
 type JoystickID = Int32
 
 data Joystick = Joy
-  { js :: SDL.Joystick
-  , jsId :: JoystickID
-  , jsHap :: Maybe HAP.HapticDevice
+  { js :: !SDL.Joystick
+  , jsId :: !JoystickID
+  , jsHap :: !(Maybe HAP.HapticDevice)
   } deriving (Eq, Show)
 
 makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick

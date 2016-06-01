@@ -361,3 +361,10 @@ averageTime = do
 
 assert :: Bool -> IO ()
 assert = flip unless $ error "Assertion failed"
+
+--
+
+setRendererDrawBlendMode :: SDL.BlendMode -> ProtoT ()
+setRendererDrawBlendMode mode = do
+  r <- asks renderer
+  SDL.rendererDrawBlendMode r $= mode

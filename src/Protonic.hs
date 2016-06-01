@@ -16,6 +16,7 @@ module Protonic
   --
   , screenSize
   , averageTime
+  , setRendererDrawBlendMode
   -- Data
   , Font
   , Sprite (spsize)
@@ -62,7 +63,7 @@ import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, Proto
                                    Transition, Update, continue, defaultConfig,
                                    end, next, nextNew, printsys, push, pushNew,
                                    runProtoT, runScene, withProtonic, screenSize,
-                                   averageTime)
+                                   averageTime, setRendererDrawBlendMode)
 import           Protonic.Data    (Font, Sprite (spsize))
 import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    InputMotion (..), HatDir (..), addAction,

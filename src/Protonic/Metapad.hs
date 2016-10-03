@@ -30,7 +30,7 @@ data Input = Input
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
   , touches      :: [SDL.TouchFingerEventData]
-  , curHat       :: !HatValue
+  , curHat       :: !HatValue -- TODO: Should identify joystick id and hat index
   , preHat       :: !HatValue
   , modState     :: !SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
@@ -298,20 +298,26 @@ joyAllAxes joy mkAct input =
 
 -- Hat
 
+isHatOn :: HatValue -> HatDir -> Bool
+isHatOn val dir = testBit val $ fromEnum dir
+
 joyHat :: HatDir -> InputMotion -> act -> Input -> IO (Maybe act)
 joyHat hatDir motion act input =
   return $ boolToMaybe act matchMotion
   where
-    hatOn :: HatValue -> Bool
-    hatOn v = testBit v $ fromEnum hatDir
-    --
-    pPre = hatOn $ preHat input
-    pCur = hatOn $ curHat input
+    pPre = isHatOn (preHat input) hatDir
+    pCur = isHatOn (curHat input) hatDir
     matchMotion
       | pPre && pCur = Holded == motion
       | pCur         = Pressed == motion
       | pPre         = Released == motion
       | otherwise    = False
+
+joyAllHat :: ([HatDir] -> act) -> Input -> IO (Maybe act)
+joyAllHat mkAct input =
+  return . Just . mkAct $ filter (isHatOn (curHat input)) dirs
+  where
+    dirs = [HDUp, HDRight, HDDown, HDLeft]
 
 -- Haptic
 

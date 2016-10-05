@@ -1,4 +1,11 @@
-module Protonic.Render where
+module Protonic.Render
+  ( setColor
+  , clearBy
+  , drawLine, drawThickLine
+  , drawRect, fillRect
+  , renderS, renderS'
+  , printTest
+  ) where
 
 import           Control.Exception     (bracket)
 import           Control.Monad.Managed (managed, runManaged)

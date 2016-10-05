@@ -1,7 +1,7 @@
 module Protonic.Data
-( Font (..)
-, Sprite (..)
-) where
+  ( Font (..)
+  , Sprite (..)
+  ) where
 
 import           Foreign.C.Types         (CInt)
 import           Linear.V2

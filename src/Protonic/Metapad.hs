@@ -1,6 +1,36 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Protonic.Metapad where
+module Protonic.Metapad
+  ( Input
+  , Joystick
+  , Metapad
+  , MouseButton (..)
+  , InputMotion (..)
+  , HatDir (..)
+  , newPad
+  , addAction
+  , makeActions
+  , newJoystickAt
+  , freeJoystick
+  -- Helper
+  , hold, pressed, released
+  -- Joystick
+  , monitorJoystick
+  , joyHold, joyPressed, joyReleased
+  , joyAxis, joyAxis2
+  , joyAxisChanged, joyAxisChanged2
+  , joyAllButtons, joyAllAxes
+  -- Hat
+  , joyHat, joyAllHat
+  -- Mouse
+  , mousePosAct
+  , mouseMotionAct
+  , mouseButtonAct
+  , mouseWheelAct
+  , touchMotionAct
+  -- Haptic
+  , rumble
+  ) where
 
 import qualified Control.Exception      as E
 import           Control.Monad          (forM_)
@@ -181,27 +211,27 @@ data Joystick = Joy
   , jsHap :: !(Maybe HAP.HapticDevice)
   } deriving (Eq, Show)
 
-makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
-makeJoystick j = do
-  mHap <- liftIO getHaptic
-  mapM_ HAP.hapticRumbleInit mHap
-  Joy j <$> SDL.getJoystickID j <*> pure mHap
-  where
-    getHaptic :: IO (Maybe HAP.HapticDevice)
-    getHaptic =
-      (Just <$> HAP.openHaptic (HAP.OpenHapticJoystick j)) `E.catch` handler
-
-    handler :: E.SomeException -> IO (Maybe HAP.HapticDevice)
-    handler _e =
-      -- putStrLn $ "Exception @getHaptic: " ++ show e
-      return Nothing
-
 newJoystickAt :: MonadIO m => Int -> m (Maybe Joystick)
 newJoystickAt i = do
   ds <- SDL.availableJoysticks
   liftIO $ case ds V.!? i of
     Nothing  -> return Nothing
     Just dev -> Just <$> (makeJoystick =<< SDL.openJoystick dev)
+  where
+    makeJoystick :: MonadIO m => SDL.Joystick -> m Joystick
+    makeJoystick j = do
+      mHap <- liftIO getHaptic
+      mapM_ HAP.hapticRumbleInit mHap
+      Joy j <$> SDL.getJoystickID j <*> pure mHap
+      where
+        getHaptic :: IO (Maybe HAP.HapticDevice)
+        getHaptic =
+          (Just <$> HAP.openHaptic (HAP.OpenHapticJoystick j)) `E.catch` handler
+
+        handler :: E.SomeException -> IO (Maybe HAP.HapticDevice)
+        handler _e =
+          -- putStrLn $ "Exception @getHaptic: " ++ show e
+          return Nothing
 
 freeJoystick :: MonadIO m => Joystick -> m ()
 freeJoystick joy = do

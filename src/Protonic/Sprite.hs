@@ -1,17 +1,17 @@
 module Protonic.Sprite
-( newFont
-, freeFont
-, ascent, descent
-, GlyphMetrics (..)
-, glyphMetrics
-, newSprite
-, newSpriteFromImage
-, freeSprite
--- ** Texture State
-, setBlendMode
-, setAlphaMod
-, setColorMod
-) where
+  ( newFont
+  , freeFont
+  , ascent, descent
+  , GlyphMetrics (..)
+  , glyphMetrics
+  , newSprite
+  , newSpriteFromImage
+  , freeSprite
+  -- ** Texture State
+  , setBlendMode
+  , setAlphaMod
+  , setColorMod
+  ) where
 
 import           Control.Exception    (bracket)
 import           Control.Monad.Reader

@@ -4,7 +4,31 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE Strict #-}
 
-module Protonic.Core where
+module Protonic.Core
+  ( Config (..)
+  , defaultConfig
+  , ProtoConfig (..)
+  , DebugJoystick (..)
+  , Proto
+  , ProtoT
+  , Render
+  , Scene (..)
+  , SceneState (..)
+  , Transit
+  , Transition
+  , Update
+  --
+  , continue, end, nextNew, next, pushNew, push
+  , runScene
+  --
+  , runProtoT
+  , withProtonic
+  --
+  , printsys
+  , screenSize
+  , averageTime
+  , setRendererDrawBlendMode
+  ) where
 
 import           Control.Exception       (bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)

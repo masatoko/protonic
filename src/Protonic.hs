@@ -59,19 +59,8 @@ module Protonic
   , rumble
   ) where
 
-import           Protonic.Core    (Config (..), DebugJoystick (..), Proto, ProtoT,
-                                   Render, Scene (..), SceneState (..), Transit,
-                                   Transition, Update, continue, defaultConfig,
-                                   end, next, nextNew, printsys, push, pushNew,
-                                   runProtoT, runScene, withProtonic, screenSize,
-                                   averageTime, setRendererDrawBlendMode)
-import           Protonic.Data    (Font, Sprite (spsize))
-import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
-                                   InputMotion (..), HatDir (..), addAction,
-                                   freeJoystick, hold, joyAxis, joyAxis2, joyAxisChanged, joyAxisChanged2,
-                                   joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, joyHat, joyAllHat, monitorJoystick,
-                                   mousePosAct, mouseMotionAct, mouseButtonAct, mouseWheelAct, touchMotionAct, newJoystickAt, newPad, pressed,
-                                   released, rumble)
-import           Protonic.Render  (setColor, clearBy, drawLine, drawThickLine, drawRect, fillRect, renderS, renderS', printTest)
-import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, setBlendMode, setAlphaMod, setColorMod,
-                                   newFont, newSprite, newSpriteFromImage, GlyphMetrics (..), glyphMetrics)
+import           Protonic.Core
+import           Protonic.Data
+import           Protonic.Metapad
+import           Protonic.Render
+import           Protonic.Sprite

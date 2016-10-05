@@ -61,6 +61,7 @@ main = do
         { P.confWinSize = V2 300 300
         , P.confWinTitle = "protpnic-app"
         , P.confWindowMode = SDL.Windowed
+        , P.confDebugPrintSystem = True
         , P.confDebugJoystick = P.DebugJoystick pBtn pAxis pHat
         }
 
@@ -181,8 +182,12 @@ mainScene mjs pad = Scene pad update render transit
     render :: Render Game
     render _ (Game spr img d i as) = do
       P.clearBy $ V4 0 0 0 255
-      P.renderS spr (P (V2 150 150)) Nothing (Just d)
+      P.renderS spr (P (V2 150 200)) Nothing (Just d)
       P.renderS img (P (V2 10 200)) Nothing Nothing
+      --
+      P.setColor $ V4 0 255 0 255
+      P.drawLine (P (V2 200 200)) (P (V2 270 230))
+      --
       P.printTest (P (V2 10 100)) color "Press Enter key to pause"
       P.printTest (P (V2 10 120)) color "Press F key!"
       let progress = replicate i '>' ++ replicate (targetCount - i) '-'

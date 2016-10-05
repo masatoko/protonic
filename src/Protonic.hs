@@ -23,7 +23,7 @@ module Protonic
   -- Render
   , setColor
   , clearBy
-  , drawLine, drawRect, fillRect
+  , drawLine, drawThickLine, drawRect, fillRect
   , renderS, renderS'
   , printTest
   -- Sprite
@@ -72,6 +72,6 @@ import           Protonic.Metapad (Input, Joystick, Metapad, MouseButton (..),
                                    joyHold, joyPressed, joyReleased, joyAllButtons, joyAllAxes, joyHat, joyAllHat, monitorJoystick,
                                    mousePosAct, mouseMotionAct, mouseButtonAct, mouseWheelAct, touchMotionAct, newJoystickAt, newPad, pressed,
                                    released, rumble)
-import           Protonic.Render  (setColor, clearBy, drawLine, drawRect, fillRect, renderS, renderS', printTest)
+import           Protonic.Render  (setColor, clearBy, drawLine, drawThickLine, drawRect, fillRect, renderS, renderS', printTest)
 import           Protonic.Sprite  (freeFont, ascent, descent, freeSprite, setBlendMode, setAlphaMod, setColorMod,
                                    newFont, newSprite, newSpriteFromImage, GlyphMetrics (..), glyphMetrics)

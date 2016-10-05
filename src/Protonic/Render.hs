@@ -13,6 +13,7 @@ import           Linear.V4
 
 import           SDL                   (($=))
 import qualified SDL
+import qualified SDL.Primitive
 
 import           Protonic.Core
 import           Protonic.Data         (Sprite (..))
@@ -47,13 +48,13 @@ renderS' (Sprite tex size) pos mSize mDeg mRotCenter =
         deg' = realToFrac deg
     copy Nothing r = SDL.copy r tex Nothing dest
 
-drawLine :: Point V2 Int -> Point V2 Int -> ProtoT ()
-drawLine org dst = do
+drawLine :: Point V2 Int -> Point V2 Int -> V4 Word8 -> ProtoT ()
+drawLine org dst color = do
   r <- asks renderer
-  SDL.drawLine r org' dst'
+  SDL.Primitive.smoothLine r org' dst' color
   where
-    org' = fromIntegral <$> org
-    dst' = fromIntegral <$> dst
+    P org' = fromIntegral <$> org
+    P dst' = fromIntegral <$> dst
 
 drawRect :: Point V2 Int -> V2 Int -> ProtoT ()
 drawRect p s = do

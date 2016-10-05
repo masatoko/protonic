@@ -184,8 +184,8 @@ mainScene mjs pad = Scene pad update render transit
       P.clearBy $ V4 0 0 0 255
       P.renderS spr (P (V2 150 200)) Nothing (Just d)
       P.renderS img (P (V2 10 200)) Nothing Nothing
-      P.drawLine (P (V2 200 200)) (P (V2 270 230)) (V4 0 255 0 255)
-      P.drawThickLine (P (V2 200 230)) (P (V2 270 260)) 3 (V4 0 255 0 255)
+      P.setColor $ V4 0 255 0 255
+      P.drawLine (P (V2 200 200)) (P (V2 270 230))
       --
       P.printTest (P (V2 10 100)) color "Press Enter key to pause"
       P.printTest (P (V2 10 120)) color "Press F key!"

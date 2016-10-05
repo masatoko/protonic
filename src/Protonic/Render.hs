@@ -1,7 +1,7 @@
 module Protonic.Render
   ( setColor
   , clearBy
-  , drawLine, drawThickLine
+  , drawLine
   , drawRect, fillRect
   , renderS, renderS'
   , printTest
@@ -20,7 +20,6 @@ import           Linear.V4
 
 import           SDL                   (($=))
 import qualified SDL
-import qualified SDL.Primitive
 
 import           Protonic.Core
 import           Protonic.Data         (Sprite (..))
@@ -55,20 +54,13 @@ renderS' (Sprite tex size) pos mSize mDeg mRotCenter =
         deg' = realToFrac deg
     copy Nothing r = SDL.copy r tex Nothing dest
 
-drawLine :: Point V2 Int -> Point V2 Int -> V4 Word8 -> ProtoT ()
-drawLine org dst color = do
+drawLine :: Point V2 Int -> Point V2 Int -> ProtoT ()
+drawLine org dst = do
   r <- asks renderer
-  SDL.Primitive.smoothLine r org' dst' color
+  SDL.drawLine r org' dst'
   where
-    P org' = fromIntegral <$> org
-    P dst' = fromIntegral <$> dst
-
-drawThickLine :: Point V2 Int -> Point V2 Int -> Int -> V4 Word8 -> ProtoT ()
-drawThickLine a b width color = do
-  r <- asks renderer
-  SDL.Primitive.thickLine r (toV2 a) (toV2 b) (fromIntegral width) color
-  where
-    toV2 = (\(P k) -> k) . fmap fromIntegral
+    org' = fromIntegral <$> org
+    dst' = fromIntegral <$> dst
 
 drawRect :: Point V2 Int -> V2 Int -> ProtoT ()
 drawRect p s = do

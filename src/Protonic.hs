@@ -23,7 +23,7 @@ module Protonic
   -- Render
   , setColor
   , clearBy
-  , drawLine, drawThickLine, drawRect, fillRect
+  , drawLine, drawRect, fillRect
   , renderS, renderS'
   , printTest
   -- Sprite

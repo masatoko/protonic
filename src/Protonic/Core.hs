@@ -178,10 +178,13 @@ withProtonic config go =
 
         setLogicalSize r =
           case confWindowMode conf of
-            SDL.FullscreenDesktop -> do
+            SDL.FullscreenDesktop -> work
+            SDL.Fullscreen -> work
+            _ -> return ()
+          where
+            work = do
               let size = Just $ SDL.windowInitialSize winConf
               SDL.rendererLogicalSize r $= size
-            _ -> return ()
 
 -- Scene
 type Update g a = SceneState -> [a] -> g -> ProtoT g

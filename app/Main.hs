@@ -60,7 +60,7 @@ main = do
       P.defaultConfig
         { P.confWinSize = V2 300 300
         , P.confWinTitle = "protpnic-app"
-        , P.confWindowMode = SDL.Windowed
+        , P.confWindowMode = SDL.Fullscreen -- SDL.Windowed
         , P.confDebugPrintSystem = True
         , P.confDebugJoystick = P.DebugJoystick pBtn pAxis pHat
         }

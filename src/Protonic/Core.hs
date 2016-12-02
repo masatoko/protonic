@@ -199,7 +199,9 @@ data Scene g a = Scene
   }
 
 data SceneState = SceneState
-  { frameCount :: Integer }
+  { frameCount :: Integer
+  , sceneEvents :: [SDL.Event]
+  }
 
 data Transition g
   = End
@@ -228,7 +230,7 @@ push s = return . Just $ Push (runScene s)
 
 -- Start scene
 runScene :: Scene g a -> g -> ProtoT g
-runScene = go (SceneState 0)
+runScene = go (SceneState 0 [])
   where
     go :: SceneState -> Scene g a -> g -> ProtoT g
     go s scene g = do
@@ -249,29 +251,30 @@ sceneLoop iniG iniS scene =
     render = sceneRender scene
     transit = sceneTransit scene
     --
-    loop mPreInput g s t = do
+    loop mPreInput g s0 t = do
       -- Update
       events <- SDL.pollEvents
       procEvents events
       (actions, curInput) <- makeActions mPreInput events pad
-      g' <- update s actions g
+      let s1 = s0 {sceneEvents = events}
+      g' <- update s1 actions g
       -- Rendering
       preRender
-      render s g'
+      render s1 g'
       updateFPS
-      printSystemState s
+      printSystemState s1
       printMessages
       SDL.present =<< asks renderer
       -- Transition
-      mTrans <- transit s actions g'
+      mTrans <- transit s1 actions g'
       -- Advance State
       wait t
       t' <- SDL.ticks
-      let s' = advance s
+      let s2 = advance s1
       -- Go next loop
       case mTrans of
-        Nothing    -> loop (Just curInput) g' s' t'
-        Just trans -> return (g', s', trans)
+        Nothing    -> loop (Just curInput) g' s2 t'
+        Just trans -> return (g', s2, trans)
 
     -- TODO: Implement frame skip
     wait :: Time -> ProtoT ()

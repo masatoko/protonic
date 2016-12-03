@@ -31,10 +31,8 @@ import           Protonic.Data        (Font (..), Sprite (..))
 import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..), rawGlyphMetrics)
 
 -- Make font from TTF (default path)
-newFont :: Int -> ProtoT Font
-newFont size = do
-  path <- asks fontPath
-  Font <$> liftIO (TTF.openFont path size)
+newFont :: FilePath -> Int -> ProtoT Font
+newFont path size = Font <$> liftIO (TTF.openFont path size)
 
 freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =

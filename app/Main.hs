@@ -30,7 +30,7 @@ data Game = Game
 
 initGame :: ProtoT Game
 initGame = do
-  font <- P.newFont 50
+  font <- P.newFont "data/font/system.ttf" 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   img <- P.newSpriteFromImage "data/img.png" (pure 48)
   P.freeFont font
@@ -76,7 +76,7 @@ main = do
 
 testGlyphMetrics :: ProtoT ()
 testGlyphMetrics = do
-  font <- P.newFont 10
+  font <- P.newFont "data/font/system.ttf" 10
   --
   asc <- P.ascent font
   dsc <- P.descent font

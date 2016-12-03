@@ -13,13 +13,14 @@ module Protonic.Sprite
   , setColorMod
   ) where
 
-import           Control.Exception    (bracket)
+import qualified Control.Exception    as E
 import           Control.Monad.Reader
 import           Data.Text            (Text)
 import           Data.Word            (Word8)
 import           Linear.V2
 import           Linear.V3
 import           Linear.V4
+import           System.Directory     (doesFileExist)
 
 import qualified Graphics.UI.SDL.TTF  as TTF
 import qualified SDL
@@ -32,7 +33,11 @@ import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..
 
 -- Make font from TTF (default path)
 newFont :: FilePath -> Int -> ProtoT Font
-newFont path size = Font <$> liftIO (TTF.openFont path size)
+newFont path size = liftIO $ do
+  p <- doesFileExist path
+  if p
+    then Font <$> TTF.openFont path size
+    else E.throwIO $ userError $ "Missing font file: " ++ path
 
 freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =
@@ -56,9 +61,9 @@ newSprite (Font font) color text = do
   rndr <- asks renderer
   liftIO $ do
     (w,h) <- sizeText font text
-    texture <- bracket (renderBlended font color text)
-                       SDL.freeSurface
-                       (SDL.createTextureFromSurface rndr)
+    texture <- E.bracket (renderBlended font color text)
+                         SDL.freeSurface
+                         (SDL.createTextureFromSurface rndr)
     return $ Sprite texture (V2 (fromIntegral w) (fromIntegral h))
 
 freeSprite :: MonadIO m => Sprite -> m ()

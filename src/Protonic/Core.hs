@@ -26,6 +26,7 @@ module Protonic.Core
   --
   , printsys
   , screenSize
+  , getWindow
   , averageTime
   , setRendererDrawBlendMode
   ) where
@@ -379,6 +380,9 @@ procEvents es = go =<< asks debugJoystick
 
 screenSize :: ProtoT (V2 Int)
 screenSize = asks scrSize
+
+getWindow :: ProtoT SDL.Window
+getWindow = asks window
 
 averageTime :: ProtoT Int
 averageTime = do

@@ -15,6 +15,7 @@ module Protonic
   , continue, end, nextNew, next, pushNew, push
   --
   , screenSize
+  , getWindow
   , averageTime
   , setRendererDrawBlendMode
   -- Data

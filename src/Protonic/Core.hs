@@ -18,7 +18,7 @@ module Protonic.Core
   , Transition
   , Update
   --
-  , continue, end, nextNew, next, pushNew, push
+  , continue, end, next, push
   , runScene
   --
   , runProtoT
@@ -31,10 +31,11 @@ module Protonic.Core
   , setRendererDrawBlendMode
   ) where
 
-import           Control.Exception       (bracket, bracket_, throwIO)
+import           Control.Exception.Safe  (MonadThrow, MonadCatch, MonadMask, bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
+import           Data.Maybe              (isNothing)
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import qualified Data.Vector.Unboxed     as V
@@ -105,7 +106,8 @@ data ProtoState = ProtoState
   --
   , actualFPS    :: !Int
   , frameTimes   :: V.Vector Time
-  } deriving Show
+  , starter      :: Maybe (ProtoT ())
+  }
 
 data Proto = Proto ProtoConfig ProtoState
 
@@ -118,11 +120,12 @@ initialState = ProtoState
   --
   , actualFPS = 0
   , frameTimes = V.empty
+  , starter = Nothing
   }
 
 newtype ProtoT a = ProtoT {
     runPT :: ReaderT ProtoConfig (StateT ProtoState IO) a
-  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState)
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadState ProtoState, MonadThrow, MonadCatch, MonadMask)
 
 runProtoT :: Proto -> ProtoT a -> IO (a, ProtoState)
 runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
@@ -188,9 +191,9 @@ withProtonic config go =
               SDL.rendererLogicalSize r $= size
 
 -- Scene
-type Update g a = SceneState -> [a] -> g -> ProtoT g
-type Render g = SceneState -> g -> ProtoT ()
-type Transit g a = SceneState -> [a] -> g -> ProtoT (Maybe (Transition g))
+type Update g a  = SceneState -> [a] -> g -> ProtoT g
+type Render g    = SceneState -> g -> ProtoT ()
+type Transit g a = SceneState -> [a] -> g -> ProtoT (Maybe Transition)
 
 data Scene g a = Scene
   { scenePad     :: Metapad a
@@ -204,46 +207,54 @@ data SceneState = SceneState
   , sceneEvents :: [SDL.Event]
   }
 
-data Transition g
-  = End
-  | NextNew (() -> ProtoT ())
-  | Next (g -> ProtoT g)
-  | PushNew (() -> ProtoT ())
-  | Push (g -> ProtoT g)
+type SceneStarter g a = (Scene g a, ProtoT g, g -> ProtoT ())
 
-continue :: Monad m => m (Maybe (Transition g))
+type Exec = ProtoT ()
+
+data Transition
+  = End
+  | Next Exec
+  | Push Exec
+
+continue :: Monad m => m (Maybe Transition)
 continue = return Nothing
 
-end :: Monad m => m (Maybe (Transition g))
+end :: Monad m => m (Maybe Transition)
 end = return $ Just End
 
-nextNew :: Monad m => Scene g a -> g -> m (Maybe (Transition g0))
-nextNew s g = return . Just $ NextNew (\_ -> void (runScene s g))
+next :: SceneStarter g a -> ProtoT (Maybe Transition)
+next stt = return . Just . Next $ runScene stt
 
-next :: Monad m => Scene g a -> m (Maybe (Transition g))
-next s = return . Just $ Next (runScene s)
-
-pushNew :: Monad m => Scene g a -> g -> m (Maybe (Transition g0))
-pushNew s g = return . Just $ PushNew (\_ -> void (runScene s g))
-
-push :: Monad m => Scene g a -> m (Maybe (Transition g))
-push s = return . Just $ Push (runScene s)
+push :: SceneStarter g a -> ProtoT (Maybe Transition)
+push stt = return . Just . Push $ goScene stt
 
 -- Start scene
-runScene :: Scene g a -> g -> ProtoT g
-runScene = go (SceneState 0 [])
-  where
-    go :: SceneState -> Scene g a -> g -> ProtoT g
-    go s scene g = do
-      (g', s', trans) <- sceneLoop g s scene
-      case trans of
-        End          -> return g'
-        Next exec    -> exec g'
-        NextNew exec -> exec () >> return g'
-        Push exec    -> exec g' >>= go s' scene
-        PushNew exec -> exec () >> go s' scene g'
+runScene :: SceneStarter g a -> ProtoT ()
+runScene stt0 = do
+  goScene stt0
+  gets starter >>= \case
+    Nothing  -> return ()
+    Just exec -> do
+      modify' $ \pst -> pst {starter = Nothing}
+      exec
 
-sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition g)
+goScene :: SceneStarter g a -> ProtoT ()
+goScene (scene_, new_, free_) =
+  bracket new_ free_ $ \g ->
+    go (SceneState 0 []) scene_ g
+  where
+    go :: SceneState -> Scene g a -> g -> ProtoT ()
+    go s0 scene0 g0 = do
+      (g', s', trans) <- sceneLoop g0 s0 scene0
+      case trans of
+        End       -> return ()
+        Next exec -> modify' $ \pst -> pst {starter = Just exec}
+        Push exec -> do
+          exec
+          ma <- gets starter
+          when (isNothing ma) $ go s' scene0 g'
+
+sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition)
 sceneLoop iniG iniS scene =
   loop Nothing iniG iniS =<< SDL.ticks
   where

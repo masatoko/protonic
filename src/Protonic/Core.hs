@@ -35,7 +35,6 @@ import           Control.Exception.Safe  (MonadThrow, MonadCatch, MonadMask, bra
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.Maybe              (isNothing)
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import qualified Data.Vector.Unboxed     as V
@@ -106,7 +105,7 @@ data ProtoState = ProtoState
   --
   , actualFPS    :: !Int
   , frameTimes   :: V.Vector Time
-  , starter      :: Maybe (ProtoT ())
+  , execScene    :: Maybe (ProtoT ())
   }
 
 data Proto = Proto ProtoConfig ProtoState
@@ -120,7 +119,7 @@ initialState = ProtoState
   --
   , actualFPS = 0
   , frameTimes = V.empty
-  , starter = Nothing
+  , execScene = Nothing
   }
 
 newtype ProtoT a = ProtoT {
@@ -200,6 +199,8 @@ data Scene g a = Scene
   , sceneUpdate  :: Update g a
   , sceneRender  :: Render g
   , sceneTransit :: Transit g a
+  , sceneNew     :: ProtoT g
+  , sceneDelete  :: g -> ProtoT ()
   }
 
 data SceneState = SceneState
@@ -222,37 +223,39 @@ continue = return Nothing
 end :: Monad m => m (Maybe Transition)
 end = return $ Just End
 
-next :: SceneStarter g a -> ProtoT (Maybe Transition)
-next stt = return . Just . Next $ runScene stt
+next :: Scene g a -> ProtoT (Maybe Transition)
+next s = return . Just . Next $ runScene s
 
-push :: SceneStarter g a -> ProtoT (Maybe Transition)
-push stt = return . Just . Push $ goScene stt
+push :: Scene g a -> ProtoT (Maybe Transition)
+push s = return . Just . Push $ goScene s
 
 -- Start scene
-runScene :: SceneStarter g a -> ProtoT ()
-runScene stt0 = do
-  goScene stt0
-  gets starter >>= \case
+runScene :: Scene g a -> ProtoT ()
+runScene scn0 = do
+  goScene scn0
+  gets execScene >>= \case
     Nothing  -> return ()
     Just exec -> do
-      modify' $ \pst -> pst {starter = Nothing}
+      modify' $ \pst -> pst {execScene = Nothing}
       exec
 
-goScene :: SceneStarter g a -> ProtoT ()
-goScene (scene_, new_, free_) =
-  bracket new_ free_ $ \g ->
-    go (SceneState 0 []) scene_ g
+goScene :: Scene g a -> ProtoT ()
+goScene scene_ =
+  bracket (sceneNew scene_)
+          (sceneDelete scene_)
+          (go (SceneState 0 []) scene_)
   where
     go :: SceneState -> Scene g a -> g -> ProtoT ()
     go s0 scene0 g0 = do
       (g', s', trans) <- sceneLoop g0 s0 scene0
       case trans of
         End       -> return ()
-        Next exec -> modify' $ \pst -> pst {starter = Just exec}
+        Next exec -> modify' $ \pst -> pst {execScene = Just exec}
         Push exec -> do
           exec
-          ma <- gets starter
-          when (isNothing ma) $ go s' scene0 g'
+          gets execScene >>= \case
+            Just _  -> return ()
+            Nothing -> go s' scene0 g'
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition)
 sceneLoop iniG iniS scene =

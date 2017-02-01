@@ -53,7 +53,7 @@ main = do
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $ do
       testGlyphMetrics
-      runScene (titleScene mjs gamepad, return Title, \_ -> return ())
+      runScene $ titleScene mjs gamepad
     maybe (return ()) P.freeJoystick mjs
     return ()
   where
@@ -139,7 +139,8 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.touchMotionAct TouchMotion
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
-titleScene mjs pad = Scene pad update render transit
+titleScene mjs pad =
+  Scene pad update render transit (return Title) (\_ -> return ())
   where
     update :: Update Title Action
     update _ as t = do
@@ -152,12 +153,12 @@ titleScene mjs pad = Scene pad update render transit
       P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
     transit _ as _
-      | Enter `elem` as = P.next (mainScene mjs pad, initGame, freeGame)
+      | Enter `elem` as = P.next $ mainScene mjs pad
       | Exit  `elem` as = P.end
       | otherwise       = P.continue
 
 mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
-mainScene mjs pad = Scene pad update render transit
+mainScene mjs pad = Scene pad update render transit initGame freeGame
   where
     update :: Update Game Action
     update stt as g0 = do
@@ -200,11 +201,11 @@ mainScene mjs pad = Scene pad update render transit
         color = V4 255 255 255 255
 
     transit _ as g
-      | cnt > targetCount = P.next (clearScene mjs cnt pad, initGame, freeGame)
-      | Enter `elem` as   = P.push (pauseScene pad, initGame, freeGame)
+      | cnt > targetCount = P.next $ clearScene mjs cnt pad
+      | Enter `elem` as   = P.push $ pauseScene pad
       --
-      | PUp   `elem` as   = P.next (mainScene mjs pad, initGame, freeGame)
-      | PDown `elem` as   = P.push (mainScene mjs pad, initGame, freeGame)
+      | PUp   `elem` as   = P.next $ mainScene mjs pad
+      | PDown `elem` as   = P.push $ mainScene mjs pad
       | Exit  `elem` as   = P.end
       --
       | otherwise         = P.continue
@@ -214,7 +215,7 @@ mainScene mjs pad = Scene pad update render transit
     targetCount = 5 :: Int
 
 pauseScene :: Metapad Action -> Scene Game Action
-pauseScene pad = Scene pad update render transit
+pauseScene pad = Scene pad update render transit initGame freeGame
   where
     update _ _ = return
 
@@ -227,7 +228,7 @@ pauseScene pad = Scene pad update render transit
       | otherwise       = P.continue
 
 clearScene :: Maybe P.Joystick -> Int -> Metapad Action -> Scene Game Action
-clearScene mjs score pad = Scene pad update render transit
+clearScene mjs score pad = Scene pad update render transit initGame freeGame
   where
     update _ _ = return
 
@@ -238,5 +239,5 @@ clearScene mjs score pad = Scene pad update render transit
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) "Enter - title"
 
     transit _ as g
-      | Enter `elem` as = P.next ( titleScene mjs pad, return Title, \_ -> return ())
+      | Enter `elem` as = P.next $ titleScene mjs pad
       | otherwise       = P.continue

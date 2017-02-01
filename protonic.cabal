@@ -35,6 +35,7 @@ library
                      , transformers
                      , mtl
                      , containers
+                     , safe-exceptions
                      , text
                      , vector
                      , managed

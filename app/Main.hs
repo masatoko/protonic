@@ -2,6 +2,7 @@
 
 module Main where
 
+import           Control.Monad.IO.Class (liftIO)
 import           System.Environment (getArgs)
 import           Control.Monad.State
 import           Data.Int            (Int16, Int32)
@@ -52,7 +53,7 @@ main = do
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $ do
       testGlyphMetrics
-      runScene (titleScene mjs gamepad) Title
+      runScene $ titleScene mjs gamepad
     maybe (return ()) P.freeJoystick mjs
     return ()
   where
@@ -60,7 +61,8 @@ main = do
       P.defaultConfig
         { P.confWinSize = V2 300 300
         , P.confWinTitle = "protpnic-app"
-        , P.confWindowMode = SDL.Fullscreen -- SDL.Windowed
+        -- , P.confWindowMode = SDL.Fullscreen
+        , P.confWindowMode = SDL.Windowed
         , P.confDebugPrintSystem = True
         , P.confDebugJoystick = P.DebugJoystick pBtn pAxis pHat
         }
@@ -99,6 +101,7 @@ data Action
   | Exit
   | AxisLeft Int16 Int16
   | PUp | HUp | RUp
+  | PDown
   --
   | MousePos (V2 Int)
   | MouseMotion (V2 Int32)
@@ -125,6 +128,7 @@ mkGamepad mjs = flip execState newPad $ do
       modify . addAction $ P.joyHat P.HDUp P.Pressed PUp
       modify . addAction $ P.joyHat P.HDUp P.Released RUp
       modify . addAction $ P.joyHat P.HDUp P.Holded HUp
+      modify . addAction $ P.joyHat P.HDDown P.Pressed PDown
     Nothing -> return ()
   -- Mouse
   modify . addAction $ P.mouseButtonAct P.ButtonLeft P.Pressed Go
@@ -135,7 +139,8 @@ mkGamepad mjs = flip execState newPad $ do
   modify . addAction $ P.touchMotionAct TouchMotion
 
 titleScene :: Maybe P.Joystick -> Metapad Action -> Scene Title Action
-titleScene mjs pad = Scene pad update render transit
+titleScene mjs pad =
+  Scene pad update render transit (return Title) (\_ -> return ())
   where
     update :: Update Title Action
     update _ as t = do
@@ -148,16 +153,16 @@ titleScene mjs pad = Scene pad update render transit
       P.printTest (P (V2 10 120)) (V4 0 255 255 255) "Escape - exit"
 
     transit _ as _
-      | Enter `elem` as = P.nextNew (mainScene mjs pad) =<< initGame
-      | Exit `elem` as  = P.end
+      | Enter `elem` as = P.next $ mainScene mjs pad
+      | Exit  `elem` as = P.end
       | otherwise       = P.continue
 
 mainScene :: Maybe P.Joystick -> Metapad Action -> Scene Game Action
-mainScene mjs pad = Scene pad update render transit
+mainScene mjs pad = Scene pad update render transit initGame freeGame
   where
     update :: Update Game Action
     update stt as g0 = do
-      when (frameCount stt `mod` 60 == 0) $ P.averageTime >>= liftIO . print
+      -- when (frameCount stt `mod` 60 == 0) $ P.averageTime >>= liftIO . print
       let alpha = fromIntegral $ frameCount stt
       P.setAlphaMod (gImgSprite g0) alpha
       execStateT go g0
@@ -196,8 +201,13 @@ mainScene mjs pad = Scene pad update render transit
         color = V4 255 255 255 255
 
     transit _ as g
-      | cnt > targetCount = P.next (clearScene mjs cnt pad)
-      | Enter `elem` as   = P.push (pauseScene pad)
+      | cnt > targetCount = P.next $ clearScene mjs cnt pad
+      | Enter `elem` as   = P.push $ pauseScene pad
+      --
+      | PUp   `elem` as   = P.next $ mainScene mjs pad
+      | PDown `elem` as   = P.push $ mainScene mjs pad
+      | Exit  `elem` as   = P.end
+      --
       | otherwise         = P.continue
       where
         cnt = gCount g
@@ -205,7 +215,7 @@ mainScene mjs pad = Scene pad update render transit
     targetCount = 5 :: Int
 
 pauseScene :: Metapad Action -> Scene Game Action
-pauseScene pad = Scene pad update render transit
+pauseScene pad = Scene pad update render transit initGame freeGame
   where
     update _ _ = return
 
@@ -218,7 +228,7 @@ pauseScene pad = Scene pad update render transit
       | otherwise       = P.continue
 
 clearScene :: Maybe P.Joystick -> Int -> Metapad Action -> Scene Game Action
-clearScene mjs score pad = Scene pad update render transit
+clearScene mjs score pad = Scene pad update render transit initGame freeGame
   where
     update _ _ = return
 
@@ -229,7 +239,5 @@ clearScene mjs score pad = Scene pad update render transit
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) "Enter - title"
 
     transit _ as g
-      | Enter `elem` as = do
-          freeGame g
-          P.nextNew (titleScene mjs pad) Title
+      | Enter `elem` as = P.next $ titleScene mjs pad
       | otherwise       = P.continue

@@ -12,7 +12,7 @@ module Protonic
   , Scene (..)
   , SceneState (..)
   , Transition
-  , continue, end, nextNew, next, pushNew, push
+  , continue, end, next, push
   --
   , screenSize
   , getWindow

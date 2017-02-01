@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE Strict #-}
 
@@ -44,6 +45,7 @@ import           Linear.V2
 import           Linear.V4
 import           System.Exit             (exitSuccess)
 import           System.Directory        (doesFileExist)
+import           Text.Printf             (printf)
 
 import qualified Graphics.UI.SDL.TTF     as TTF
 import           Graphics.UI.SDL.TTF.FFI (TTFFont)
@@ -100,10 +102,11 @@ data ProtoConfig = ProtoConfig
 data ProtoState = ProtoState
   {
     messages     :: [Text]
-  , updatedCount :: !Int
-  , updatedTime  :: !Time
   --
-  , actualFPS    :: !Int
+  , psStart      :: !Time
+  , psCount      :: !Int
+  --
+  , actualFPS    :: !Double
   , frameTimes   :: V.Vector Time
   , execScene    :: Maybe (ProtoT ())
   }
@@ -114,8 +117,8 @@ initialState :: ProtoState
 initialState = ProtoState
   {
     messages = []
-  , updatedCount = 0
-  , updatedTime = 0
+  , psStart = 0
+  , psCount = 0
   --
   , actualFPS = 0
   , frameTimes = V.empty
@@ -259,14 +262,15 @@ goScene scene_ =
 
 sceneLoop :: g -> SceneState -> Scene g a -> ProtoT (g, SceneState, Transition)
 sceneLoop iniG iniS scene =
-  loop Nothing iniG iniS =<< SDL.ticks
+  loop Nothing iniG iniS
   where
     pad = scenePad scene
     update = sceneUpdate scene
     render = sceneRender scene
     transit = sceneTransit scene
     --
-    loop mPreInput g s0 t = do
+    loop mPreInput g s0 = do
+      updateTime
       -- Update
       events <- SDL.pollEvents
       procEvents events
@@ -276,40 +280,50 @@ sceneLoop iniG iniS scene =
       -- Rendering
       preRender
       render s1 g'
-      updateFPS
+      -- updateFPS
       printSystemState s1
       printMessages
       SDL.present =<< asks renderer
       -- Transition
       mTrans <- transit s1 actions g'
       -- Advance State
-      wait t
-      t' <- SDL.ticks
+      wait
       let s2 = advance s1
       -- Go next loop
       case mTrans of
-        Nothing    -> loop (Just curInput) g' s2 t'
+        Nothing    -> loop (Just curInput) g' s2
         Just trans -> return (g', s2, trans)
 
     -- TODO: Implement frame skip
-    wait :: Time -> ProtoT ()
-    wait t = do
-      t' <- SDL.ticks
+    updateTime :: ProtoT ()
+    updateTime = do
+      cnt <- gets psCount
+      t0 <- gets psStart
+      t <- SDL.ticks
+      if | cnt == 0  -> modify' $ \a -> a {psStart = t}
+         | cnt == 60 -> do
+              let fps = (60 * 1000) / fromIntegral (t - t0)
+              modify' $ \a -> a {psCount = 0, psStart = t, actualFPS = fps}
+         | otherwise -> return ()
+      modify' $ \a -> a {psCount = psCount a + 1}
+
+    wait :: ProtoT ()
+    wait = do
+      t <- SDL.ticks
+      cnt <- gets psCount
+      t0 <- gets psStart
       fps <- asks graphFPS
-      let tFPS = truncate $ (1000 :: Double) / fromIntegral fps
-          dt = if t' < t then 0 else t' - t
-          tWait = tFPS - dt
-      n <- asks numAverateTime
-      modify $ \s -> let
-        ts = V.cons dt $ frameTimes s
-        in s {frameTimes = V.take n ts}
-      when (tFPS > dt) $ SDL.delay $ fromIntegral tWait
-      -- Print updating + rendering time and waiting time for debug
+      let lapse = t - t0
+          tWait = fromIntegral (cnt * 1000) / fromIntegral fps - fromIntegral lapse
+          tWait' = truncate (tWait :: Double)
+      when (tWait > 0) $ SDL.delay tWait'
+
+      -- Print meter
       p <- asks debugPrintSystem
       when p $
-        if tFPS > dt
-          then printsys . T.pack $ replicate (fromIntegral dt) '*' ++ replicate (fromIntegral tWait) '-'
-          else printsys . T.pack $ replicate (fromIntegral tFPS) '*'
+        if tWait > 0
+          then printsys . T.pack $ replicate (fromIntegral tWait') '|'
+          else printsys . T.pack $ "NO WAIT"
 
     preRender :: ProtoT ()
     preRender = do
@@ -317,23 +331,11 @@ sceneLoop iniG iniS scene =
       SDL.rendererDrawColor r $= V4 0 0 0 255
       SDL.clear r
 
-    updateFPS :: ProtoT ()
-    updateFPS = do
-      modify (\s -> let c = updatedCount s in s {updatedCount = c + 1})
-      curT <- SDL.ticks
-      preT <- gets updatedTime
-      when (curT - preT > 1000) $ do
-        fps <- gets updatedCount
-        modify $ \s -> s { actualFPS = fps
-                         , updatedTime = curT
-                         , updatedCount = 0
-                         }
-
     printSystemState :: SceneState -> ProtoT ()
     printSystemState stt = do
       p <- asks debugPrintSystem
       when p $ do
-        printsys . T.pack =<< (("FPS:" ++) . show) <$> gets actualFPS
+        printsys . T.pack =<< (printf "FPS:%.2f") <$> gets actualFPS
         printsys . T.pack . ("Frame:" ++) . show . frameCount $ stt
 
     advance :: SceneState -> SceneState

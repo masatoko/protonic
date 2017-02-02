@@ -360,7 +360,9 @@ sceneLoop iniG iniS scene =
           return $ y + fromIntegral h
 
 printsys :: Text -> ProtoT ()
-printsys text = modify $ \s -> let ms = messages s in s {messages = text:ms}
+printsys text
+  | T.null text = return ()
+  | otherwise   = modify $ \s -> s {messages = text:(messages s)}
 
 -- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont

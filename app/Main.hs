@@ -49,7 +49,7 @@ freeGame g = liftIO $ do
 main :: IO ()
 main = do
   as <- getArgs
-  fontBytes <- liftIO $ B.readFile "data/font/system.ttf"
+  fontBytes <- B.readFile "data/font/system.ttf"
   let opt = (`elem` as)
       conf = mkConf (opt "button") (opt "axis") (opt "hat")
       conf' = conf {P.confFont = Left fontBytes}
@@ -57,7 +57,7 @@ main = do
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $ do
-      testGlyphMetrics
+      -- testGlyphMetrics
       runScene $ titleScene mjs gamepad
     maybe (return ()) P.freeJoystick mjs
     return ()

@@ -9,11 +9,12 @@ module Protonic.Font
 
 import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import qualified Control.Exception.Safe   as E
+import qualified Data.ByteString          as B
 import           Data.ByteString          (ByteString)
 import           Data.ByteString.Internal (ByteString (..))
 import           System.Directory         (doesFileExist)
-import           Foreign.ForeignPtr   (withForeignPtr)
-import           Foreign.Ptr          (plusPtr)
+import           Foreign.ForeignPtr       (withForeignPtr)
+import           Foreign.Ptr              (plusPtr)
 
 import qualified Graphics.UI.SDL.TTF      as TTF
 

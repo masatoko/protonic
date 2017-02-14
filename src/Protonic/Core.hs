@@ -58,7 +58,7 @@ import qualified SDL.Mixer               as Mix
 import           Protonic.Metapad
 import           Protonic.TTFHelper      (renderBlended, sizeText, fontFromBytes)
 import           Protonic.Data           (Font (..))
-import           Protonic.Font           (withFont)
+import           Protonic.Font           (newFont, freeFont, withFont)
 
 data Config = Config
   { confWinSize :: V2 Int
@@ -167,9 +167,10 @@ withProtonic config go =
         withFont' act =
           case confFont config of
             Left bytes -> withFont bytes size act
-            Right path -> do
-              bytes <- B.readFile path
-              withFont bytes size act
+            Right path ->
+              bracket (newFont path size)
+                      freeFont
+                      act
 
     withWinRenderer :: Config -> (SDL.Window -> SDL.Renderer -> IO a) -> IO a
     withWinRenderer conf work = withW $ withR work

@@ -1,10 +1,5 @@
 #include "ttf_helper.h"
 
-extern DECLSPEC int SDLCALL helper_test(void)
-{
-  return 1;
-}
-
 extern DECLSPEC int SDLCALL
   TTF_OpenFontRW_(SDL_RWops *src, int ptsize)
 {

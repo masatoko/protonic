@@ -32,8 +32,8 @@ data Game = Game
 
 initGame :: ProtoT Game
 initGame = do
-  font <- P.newFont fontPath 50
-  -- font <- liftIO (B.readFile fontPath >>= \bytes -> P.decodeFont bytes 50
+  -- font <- P.newFont fontPath 50
+  font <- liftIO (B.readFile fontPath) >>= \bytes -> P.decodeFont bytes 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   img <- P.loadSprite "data/img.png" (pure 48)
   P.freeFont font
@@ -50,9 +50,11 @@ freeGame g = liftIO $ do
 main :: IO ()
 main = do
   as <- getArgs
+  fontBytes <- liftIO $ B.readFile "data/font/system.ttf"
   let opt = (`elem` as)
       conf = mkConf (opt "button") (opt "axis") (opt "hat")
-  withProtonic conf $ \proto -> do
+      conf' = conf {P.confFont = Left fontBytes}
+  withProtonic conf' $ \proto -> do
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
     _ <- runProtoT proto $ do

@@ -9,10 +9,11 @@ module Protonic.TTFHelper
 , fontFromBytes
 ) where
 
-import           Control.Exception       (throwIO)
+import           Control.Exception.Safe  as E
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
-import           Data.ByteString         (ByteString)
 import qualified Data.ByteString         as B
+import           Data.ByteString.Internal (ByteString(..))
+import           Data.ByteString         (ByteString)
 import           Data.Text               (Text)
 import           Data.Text.Foreign       (lengthWord16, unsafeCopyToPtr)
 import           Data.Word               (Word16, Word8)
@@ -22,12 +23,13 @@ import           Foreign.Marshal.Alloc   (alloca, allocaBytes)
 import           Foreign.Marshal.Utils   (with)
 import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable
+import           Foreign.ForeignPtr      (withForeignPtr)
 import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF.FFI as FFI
 import qualified SDL
 import           SDL.Raw                 (Color (..), Surface, RWops)
-import           SDL.Raw.Filesystem      (rwFromMem)
+import           SDL.Raw.Filesystem      (rwFromConstMem)
 
 #include "ttf_helper.h"
 
@@ -71,7 +73,7 @@ sizeText font text =
             w' <- fromIntegral <$> peek w
             h' <- fromIntegral <$> peek h
             return (w', h')
-          _ -> throwIO $ userError "sizeText (sizeUNICODE)"
+          _ -> E.throwIO $ userError "sizeText (sizeUNICODE)"
 
 -- TTF_GlyphMetrics
 -- http://sdl2referencejp.osdn.jp/TTF_GlyphMetrics.html
@@ -120,21 +122,8 @@ rawGlyphMetrics font c =
     ch = fromIntegral $ ord c
 
 fontFromBytes :: MonadIO m => ByteString -> Int -> m FFI.TTFFont
-fontFromBytes bytes fontSize = liftIO $
-  withByteString bytes $ \ptr size -> do
-    rw <- rwFromMem ptr size
+fontFromBytes (PS fptr off len) fontSize = liftIO $
+  withForeignPtr fptr $ \ptr -> do
+    let beg = ptr `plusPtr` off
+    rw <- rwFromConstMem beg $ fromIntegral len
     cOpenFontRW rw (fromIntegral fontSize)
-
-withByteString :: ByteString -> (Ptr () -> CInt -> IO a) -> IO a
-withByteString bytes action =
-  allocaBytes size $ \ptr -> do
-    loop ptr (B.unpack bytes)
-    action (castPtr ptr) (fromIntegral size)
-  where
-  size = B.length bytes
-
-  loop :: Ptr Word8 -> [Word8] -> IO ()
-  loop _   []     = return ()
-  loop ptr (w:ws) = do
-    poke ptr w
-    loop (ptr `plusPtr` 1) ws

@@ -60,4 +60,5 @@ executable proto
                      , mtl
                      , linear
                      , vector
+                     , bytestring
   default-language:    Haskell2010

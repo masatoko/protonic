@@ -36,6 +36,7 @@ import           Control.Exception.Safe  (MonadThrow, MonadCatch, MonadMask, bra
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
 import           Control.Monad.State
+import qualified Data.ByteString         as B
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import qualified Data.Vector.Unboxed     as V

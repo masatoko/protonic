@@ -1,5 +1,6 @@
 module Protonic.Sprite
   ( newFont
+  , decodeFont
   , freeFont
   , ascent, descent
   , GlyphMetrics (..)
@@ -31,7 +32,7 @@ import           SDL                  (($=), get)
 
 import           Protonic.Core
 import           Protonic.Data        (Font (..), Sprite (..))
-import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..), rawGlyphMetrics)
+import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..), rawGlyphMetrics, fontFromBytes)
 
 -- Make font from TTF (default path)
 newFont :: FilePath -> Int -> ProtoT Font
@@ -40,6 +41,9 @@ newFont path size = liftIO $ do
   if p
     then Font <$> TTF.openFont path size
     else E.throwIO $ userError $ "Missing font file: " ++ path
+
+decodeFont :: MonadIO m => ByteString -> Int -> m Font
+decodeFont bytes size = Font <$> fontFromBytes bytes size
 
 freeFont :: MonadIO m => Font -> m ()
 freeFont (Font font) =

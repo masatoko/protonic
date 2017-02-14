@@ -6,10 +6,13 @@ module Protonic.TTFHelper
 , renderBlended
 , GlyphMetrics (..)
 , rawGlyphMetrics
+, fontFromBytes
 ) where
 
 import           Control.Exception       (throwIO)
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
+import           Data.ByteString         (ByteString)
+import qualified Data.ByteString         as B
 import           Data.Text               (Text)
 import           Data.Text.Foreign       (lengthWord16, unsafeCopyToPtr)
 import           Data.Word               (Word16, Word8)
@@ -17,13 +20,14 @@ import           Data.Char               (ord)
 import           Foreign.C.Types         (CInt (..), CUShort)
 import           Foreign.Marshal.Alloc   (alloca, allocaBytes)
 import           Foreign.Marshal.Utils   (with)
-import           Foreign.Ptr             (Ptr, castPtr)
+import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable
 import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF.FFI as FFI
 import qualified SDL
-import           SDL.Raw                 (Color (..), Surface)
+import           SDL.Raw                 (Color (..), Surface, RWops)
+import           SDL.Raw.Filesystem      (rwFromMem)
 
 #include "ttf_helper.h"
 
@@ -35,6 +39,9 @@ foreign import ccall "TTF_SizeUNICODE"
 
 foreign import ccall "minx_TTF_GlyphMetrics"
   cMinxOfGlyph :: FFI.TTFFont -> CInt -> Ptr GlyphMetrics -> IO CInt
+
+foreign import ccall "TTF_OpenFontRW_"
+  cOpenFontRW :: Ptr RWops -> CInt -> IO FFI.TTFFont
 
 -- Reference - https://github.com/sbidin/sdl2-ttf/blob/master/src/SDL/Font.hs
 renderBlended :: MonadIO m => FFI.TTFFont -> V4 Word8 -> Text -> m SDL.Surface
@@ -111,3 +118,23 @@ rawGlyphMetrics font c =
   where
     gm0 = GlyphMetrics 0 0 0 0 0
     ch = fromIntegral $ ord c
+
+fontFromBytes :: MonadIO m => ByteString -> Int -> m FFI.TTFFont
+fontFromBytes bytes fontSize = liftIO $
+  withByteString bytes $ \ptr size -> do
+    rw <- rwFromMem ptr size
+    cOpenFontRW rw (fromIntegral fontSize)
+
+withByteString :: ByteString -> (Ptr () -> CInt -> IO a) -> IO a
+withByteString bytes action =
+  allocaBytes size $ \ptr -> do
+    loop ptr (B.unpack bytes)
+    action (castPtr ptr) (fromIntegral size)
+  where
+  size = B.length bytes
+
+  loop :: Ptr Word8 -> [Word8] -> IO ()
+  loop _   []     = return ()
+  loop ptr (w:ws) = do
+    poke ptr w
+    loop (ptr `plusPtr` 1) ws

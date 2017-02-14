@@ -28,7 +28,7 @@ module Protonic
   , renderS, renderS'
   , printTest
   -- Sprite
-  , newFont, freeFont
+  , newFont, decodeFont, freeFont
   , ascent, descent
   , newSprite, loadSprite, decodeSprite, freeSprite
   , setBlendMode, setAlphaMod, setColorMod

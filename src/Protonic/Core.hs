@@ -139,38 +139,37 @@ withProtonic :: Config -> (Proto -> IO ()) -> IO ()
 withProtonic config go =
   bracket_ SDL.initializeAll SDL.quit $ do
     specialInit
-    TTF.withInit $
+    TTF.withInit $ withFont' $ \(Font font) ->
       withWinRenderer config $ \win r -> do
         SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
-        withConf win r $ \conf -> do
-          let proto = Proto conf initialState
-          go proto
+        let conf = mkConf font win r
+        go $ Proto conf initialState
   where
     specialInit = do
       _ <- SDL.setMouseLocationMode SDL.RelativeLocation
       return ()
 
-    withConf win r work =
-      withFont' $ \(Font font) ->
-        work ProtoConfig
-              { graphFPS = 60
-              , scrSize = confWinSize config
-              , window = win
-              , renderer = r
-              , systemFont = font
-              , debugPrintSystem = confDebugPrintSystem config
-              , debugJoystick = confDebugJoystick config
-              , numAverateTime = confNumAverageTime config
-              }
+    withFont' act =
+      case confFont config of
+        Left bytes -> withFont bytes size act
+        Right path ->
+          bracket (newFont path size)
+                  freeFont
+                  act
       where
         size = 16
-        withFont' act =
-          case confFont config of
-            Left bytes -> withFont bytes size act
-            Right path ->
-              bracket (newFont path size)
-                      freeFont
-                      act
+
+    mkConf font win r =
+      ProtoConfig
+        { graphFPS = 60
+        , scrSize = confWinSize config
+        , window = win
+        , renderer = r
+        , systemFont = font
+        , debugPrintSystem = confDebugPrintSystem config
+        , debugJoystick = confDebugJoystick config
+        , numAverateTime = confNumAverageTime config
+        }
 
     withWinRenderer :: Config -> (SDL.Window -> SDL.Renderer -> IO a) -> IO a
     withWinRenderer conf work = withW $ withR work

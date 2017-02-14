@@ -1,11 +1,5 @@
 module Protonic.Sprite
-  ( newFont
-  , decodeFont
-  , freeFont
-  , ascent, descent
-  , GlyphMetrics (..)
-  , glyphMetrics
-  , newSprite
+  ( newSprite
   , loadSprite
   , decodeSprite
   , freeSprite
@@ -23,43 +17,14 @@ import           Data.Word            (Word8)
 import           Linear.V2
 import           Linear.V3
 import           Linear.V4
-import           System.Directory     (doesFileExist)
 
-import qualified Graphics.UI.SDL.TTF  as TTF
 import qualified SDL
 import qualified SDL.Image
 import           SDL                  (($=), get)
 
 import           Protonic.Core
 import           Protonic.Data        (Font (..), Sprite (..))
-import           Protonic.TTFHelper   (renderBlended, sizeText, GlyphMetrics (..), rawGlyphMetrics, fontFromBytes)
-
--- Make font from TTF (default path)
-newFont :: FilePath -> Int -> ProtoT Font
-newFont path size = liftIO $ do
-  p <- doesFileExist path
-  if p
-    then Font <$> TTF.openFont path size
-    else E.throwIO $ userError $ "Missing font file: " ++ path
-
-decodeFont :: MonadIO m => ByteString -> Int -> m Font
-decodeFont bytes size = Font <$> fontFromBytes bytes size
-
-freeFont :: MonadIO m => Font -> m ()
-freeFont (Font font) =
-  liftIO $ TTF.closeFont font
-
-ascent :: MonadIO m => Font -> m Int
-ascent (Font font) =
-  liftIO $ TTF.getFontAscent font
-
-descent :: MonadIO m => Font -> m Int
-descent (Font font) =
-  liftIO $ TTF.getFontDescent font
-
-glyphMetrics :: MonadIO m => Font -> Char -> m GlyphMetrics
-glyphMetrics (Font font) c =
-  liftIO $ rawGlyphMetrics font c
+import           Protonic.TTFHelper   (renderBlended, sizeText)
 
 -- TODO: Change color
 newSprite :: Font -> V4 Word8 -> Text -> ProtoT Sprite

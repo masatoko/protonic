@@ -32,8 +32,7 @@ data Game = Game
 
 initGame :: ProtoT Game
 initGame = do
-  -- font <- P.newFont fontPath 50
-  font <- liftIO (B.readFile fontPath) >>= \bytes -> P.decodeFont bytes 50
+  font <- P.newFont fontPath 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
   img <- P.loadSprite "data/img.png" (pure 48)
   P.freeFont font

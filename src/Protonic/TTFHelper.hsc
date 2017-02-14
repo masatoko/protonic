@@ -11,9 +11,6 @@ module Protonic.TTFHelper
 
 import           Control.Exception.Safe  as E
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
-import qualified Data.ByteString         as B
-import           Data.ByteString.Internal (ByteString(..))
-import           Data.ByteString         (ByteString)
 import           Data.Text               (Text)
 import           Data.Text.Foreign       (lengthWord16, unsafeCopyToPtr)
 import           Data.Word               (Word16, Word8)
@@ -23,7 +20,6 @@ import           Foreign.Marshal.Alloc   (alloca, allocaBytes)
 import           Foreign.Marshal.Utils   (with)
 import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable
-import           Foreign.ForeignPtr      (withForeignPtr)
 import           Linear.V4
 
 import qualified Graphics.UI.SDL.TTF.FFI as FFI
@@ -121,9 +117,7 @@ rawGlyphMetrics font c =
     gm0 = GlyphMetrics 0 0 0 0 0
     ch = fromIntegral $ ord c
 
-fontFromBytes :: MonadIO m => ByteString -> Int -> m FFI.TTFFont
-fontFromBytes (PS fptr off len) fontSize = liftIO $
-  withForeignPtr fptr $ \ptr -> do
-    let beg = ptr `plusPtr` off
-    rw <- rwFromConstMem beg $ fromIntegral len
-    cOpenFontRW rw (fromIntegral fontSize)
+fontFromBytes :: Ptr Word8 -> Int -> Int -> IO FFI.TTFFont
+fontFromBytes ptr len fontSize = do
+  rw <- rwFromConstMem (castPtr ptr) (fromIntegral len)
+  cOpenFontRW rw $ fromIntegral fontSize

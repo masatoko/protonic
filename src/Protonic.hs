@@ -27,9 +27,10 @@ module Protonic
   , drawLine, drawRect, fillRect
   , renderS, renderS'
   , printTest
-  -- Sprite
-  , newFont, decodeFont, freeFont
+  -- Font
+  , newFont, freeFont, withFont
   , ascent, descent
+  -- Sprite
   , newSprite, loadSprite, decodeSprite, freeSprite
   , setBlendMode, setAlphaMod, setColorMod
   , GlyphMetrics (..), glyphMetrics
@@ -62,6 +63,7 @@ module Protonic
 
 import           Protonic.Core
 import           Protonic.Data
+import           Protonic.Font
 import           Protonic.Metapad
 import           Protonic.Render
 import           Protonic.Sprite

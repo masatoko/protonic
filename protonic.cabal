@@ -20,6 +20,7 @@ library
   exposed-modules:     Protonic
   other-modules:       Protonic.Core
                      , Protonic.Data
+                     , Protonic.Font
                      , Protonic.Metapad
                      , Protonic.Render
                      , Protonic.Sprite

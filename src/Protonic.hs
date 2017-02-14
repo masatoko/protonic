@@ -30,7 +30,7 @@ module Protonic
   -- Sprite
   , newFont, freeFont
   , ascent, descent
-  , newSprite, newSpriteFromImage, freeSprite
+  , newSprite, loadSprite, decodeSprite, freeSprite
   , setBlendMode, setAlphaMod, setColorMod
   , GlyphMetrics (..), glyphMetrics
   -- Metapad

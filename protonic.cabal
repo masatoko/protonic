@@ -35,6 +35,7 @@ library
                      , transformers
                      , mtl
                      , containers
+                     , bytestring
                      , safe-exceptions
                      , text
                      , vector

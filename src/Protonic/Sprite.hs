@@ -5,7 +5,8 @@ module Protonic.Sprite
   , GlyphMetrics (..)
   , glyphMetrics
   , newSprite
-  , newSpriteFromImage
+  , loadSprite
+  , decodeSprite
   , freeSprite
   -- ** Texture State
   , setBlendMode
@@ -15,6 +16,7 @@ module Protonic.Sprite
 
 import qualified Control.Exception    as E
 import           Control.Monad.Reader
+import           Data.ByteString      (ByteString)
 import           Data.Text            (Text)
 import           Data.Word            (Word8)
 import           Linear.V2
@@ -69,10 +71,16 @@ newSprite (Font font) color text = do
 freeSprite :: MonadIO m => Sprite -> m ()
 freeSprite (Sprite t _) = SDL.destroyTexture t
 
-newSpriteFromImage :: FilePath -> V2 Int -> ProtoT Sprite
-newSpriteFromImage path size = do
+loadSprite :: FilePath -> V2 Int -> ProtoT Sprite
+loadSprite path size = do
   r <- asks renderer
   texture <- SDL.Image.loadTexture r path
+  return $ Sprite texture $ fromIntegral <$> size
+
+decodeSprite :: ByteString -> V2 Int -> ProtoT Sprite
+decodeSprite bytes size = do
+  r <- asks renderer
+  texture <- SDL.Image.decodeTexture r bytes
   return $ Sprite texture $ fromIntegral <$> size
 
 setBlendMode :: MonadIO m => Sprite -> SDL.BlendMode -> m ()

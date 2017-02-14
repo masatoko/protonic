@@ -33,7 +33,7 @@ initGame :: ProtoT Game
 initGame = do
   font <- P.newFont "data/font/system.ttf" 50
   char <- P.newSprite font (V4 255 255 255 255) "@"
-  img <- P.newSpriteFromImage "data/img.png" (pure 48)
+  img <- P.loadSprite "data/img.png" (pure 48)
   P.freeFont font
   liftIO . putStrLn $ "init Game"
   return $ Game char img 0 0 []

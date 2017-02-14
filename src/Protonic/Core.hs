@@ -56,7 +56,7 @@ import qualified SDL
 import qualified SDL.Mixer               as Mix
 
 import           Protonic.Metapad
-import           Protonic.TTFHelper      (renderBlended, sizeText)
+import           Protonic.TTFHelper      (renderBlended, sizeText, fontFromBytes)
 
 data Config = Config
   { confWinSize :: V2 Int
@@ -65,6 +65,7 @@ data Config = Config
   , confDebugPrintSystem :: Bool
   , confDebugJoystick :: DebugJoystick
   , confNumAverageTime :: Int
+  , confFont :: Either B.ByteString FilePath
   }
 
 data DebugJoystick = DebugJoystick
@@ -81,6 +82,7 @@ defaultConfig = Config
   , confDebugPrintSystem = False
   , confDebugJoystick = DebugJoystick False False False
   , confNumAverageTime = 60
+  , confFont = Right "data/font/system.ttf"
   }
 
 type Time = Word32
@@ -92,8 +94,6 @@ data ProtoConfig = ProtoConfig
   -- Resource
   , renderer         :: SDL.Renderer
   , systemFont       :: TTFFont
-  , fontPath         :: String
-  , fontSize         :: Int
   -- Debug
   , debugPrintSystem :: Bool
   , debugJoystick    :: DebugJoystick
@@ -148,22 +148,24 @@ withProtonic config go =
       _ <- SDL.setMouseLocationMode SDL.RelativeLocation
       return ()
 
-    withConf win r work = do
-      let path = "data/font/system.ttf"
-          size = 16
-      bracket (openFont path size) TTF.closeFont $ \font ->
+    withConf win r work =
+      bracket makeFont TTF.closeFont $ \font ->
         work ProtoConfig
               { graphFPS = 60
               , scrSize = confWinSize config
               , window = win
               , renderer = r
               , systemFont = font
-              , fontPath = path
-              , fontSize = size
               , debugPrintSystem = confDebugPrintSystem config
               , debugJoystick = confDebugJoystick config
               , numAverateTime = confNumAverageTime config
               }
+      where
+        size = 16
+        makeFont =
+          case confFont config of
+            Left bytes -> fontFromBytes bytes size
+            Right path -> openFont path size
 
     withWinRenderer :: Config -> (SDL.Window -> SDL.Renderer -> IO a) -> IO a
     withWinRenderer conf work = withW $ withR work

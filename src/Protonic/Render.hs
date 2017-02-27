@@ -26,15 +26,15 @@ import           Protonic.Data         (Sprite (..))
 import           Protonic.TTFHelper    (renderBlended, sizeText)
 
 setColor :: V4 Word8 -> ProtoT ()
-setColor color = do
-  r <- asks renderer
-  SDL.rendererDrawColor r $= color
+setColor color =
+  withRenderer $ \r ->
+    SDL.rendererDrawColor r $= color
 
 clearBy :: V4 Word8 -> ProtoT ()
-clearBy color = do
-  r <- asks renderer
-  SDL.rendererDrawColor r $= color
-  SDL.clear r
+clearBy color =
+  withRenderer $ \r -> do
+    SDL.rendererDrawColor r $= color
+    SDL.clear r
 
 renderS :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> ProtoT ()
 renderS spr pos mSize mDeg =
@@ -42,7 +42,7 @@ renderS spr pos mSize mDeg =
 
 renderS' :: Sprite -> Point V2 Int -> Maybe (V2 CInt) -> Maybe Double -> Maybe (Point V2 CInt) -> ProtoT ()
 renderS' (Sprite tex size) pos mSize mDeg mRotCenter =
-  copy mDeg =<< asks renderer
+  withRenderer $ copy mDeg
   where
     pos' = fromIntegral <$> pos
     size' = fromMaybe size mSize
@@ -55,25 +55,25 @@ renderS' (Sprite tex size) pos mSize mDeg mRotCenter =
     copy Nothing r = SDL.copy r tex Nothing dest
 
 drawLine :: Point V2 Int -> Point V2 Int -> ProtoT ()
-drawLine org dst = do
-  r <- asks renderer
-  SDL.drawLine r org' dst'
+drawLine org dst =
+  withRenderer $ \r ->
+    SDL.drawLine r org' dst'
   where
     org' = fromIntegral <$> org
     dst' = fromIntegral <$> dst
 
 drawRect :: Point V2 Int -> V2 Int -> ProtoT ()
-drawRect p s = do
-  r <- asks renderer
-  SDL.drawRect r (Just (SDL.Rectangle p' s'))
+drawRect p s =
+  withRenderer $ \r ->
+    SDL.drawRect r (Just (SDL.Rectangle p' s'))
   where
     p' = fromIntegral <$> p
     s' = fromIntegral <$> s
 
 fillRect :: Point V2 Int -> V2 Int -> ProtoT ()
-fillRect p s = do
-  r <- asks renderer
-  SDL.fillRect r (Just (SDL.Rectangle p' s'))
+fillRect p s =
+  withRenderer $ \r ->
+    SDL.fillRect r (Just (SDL.Rectangle p' s'))
   where
     p' = fromIntegral <$> p
     s' = fromIntegral <$> s
@@ -81,13 +81,12 @@ fillRect p s = do
 printTest :: Point V2 Int -> V4 Word8 -> Text -> ProtoT ()
 printTest pos color text = do
   font <- asks systemFont
-  rndr <- asks renderer
-  liftIO $ do
+  withRenderer $ \r -> do
     (w,h) <- sizeText font text
     runManaged $ do
       surface <- managed $ bracket (renderBlended font color text) SDL.freeSurface
-      texture <- managed $ bracket (SDL.createTextureFromSurface rndr surface) SDL.destroyTexture
+      texture <- managed $ bracket (SDL.createTextureFromSurface r surface) SDL.destroyTexture
       let rect = Just $ SDL.Rectangle pos' (fromIntegral <$> V2 w h)
-      SDL.copy rndr texture Nothing rect
+      SDL.copy r texture Nothing rect
   where
     pos' = fromIntegral <$> pos

@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE StrictData #-}
@@ -32,9 +33,11 @@ module Protonic.Core
   , screenSize
   , getWindow
   , averageTime
+  , withRenderer
   , setRendererDrawBlendMode
   ) where
 
+import           Control.Concurrent.MVar (MVar, newMVar, withMVar)
 import           Control.Exception.Safe  (MonadThrow, MonadCatch, MonadMask, bracket, bracket_, throwIO)
 import           Control.Monad.Managed   (managed, runManaged)
 import           Control.Monad.Reader
@@ -97,7 +100,7 @@ data ProtoConfig = ProtoConfig
   , scrSize          :: V2 Int
   , window           :: SDL.Window
   -- Resource
-  , renderer         :: SDL.Renderer
+  , renderer         :: MVar SDL.Renderer
   , systemFont       :: TTFFont
   -- Debug
   , debugPrintSystem :: Bool
@@ -152,7 +155,7 @@ withProtonic config go =
     TTF.withInit $ withFont' $ \(Font font) ->
       withWinRenderer config $ \win r -> do
         SDL.rendererDrawBlendMode r $= SDL.BlendAlphaBlend
-        let conf = mkConf font win r
+        conf <- mkConf font win r
         go $ Proto conf initialState
   where
     specialInit = do
@@ -170,12 +173,13 @@ withProtonic config go =
         size = h `div` 60
         V2 _ h = confWinSize config
 
-    mkConf font win r =
-      ProtoConfig
+    mkConf font win r = do
+      mvar <- newMVar r
+      return $ ProtoConfig
         { graphFPS = 60
         , scrSize = confWinSize config
         , window = win
-        , renderer = r
+        , renderer = mvar
         , systemFont = font
         , debugPrintSystem = confDebugPrintSystem config
         , debugJoystick = confDebugJoystick config
@@ -301,7 +305,7 @@ sceneLoop iniG iniS scene =
       -- updateFPS
       printSystemState s1
       printMessages
-      SDL.present =<< asks renderer
+      withRenderer SDL.present
       -- Transition
       mTrans <- transit s1 actions g'
       -- Advance State
@@ -344,10 +348,10 @@ sceneLoop iniG iniS scene =
           else printsys . T.pack $ "NO WAIT"
 
     preRender :: ProtoT ()
-    preRender = do
-      r <- asks renderer
-      SDL.rendererDrawColor r $= V4 0 0 0 255
-      SDL.clear r
+    preRender =
+      withRenderer $ \r -> do
+        SDL.rendererDrawColor r $= V4 0 0 0 255
+        SDL.clear r
 
     printSystemState :: SceneState -> ProtoT ()
     printSystemState stt = do
@@ -363,10 +367,10 @@ sceneLoop iniG iniS scene =
     printMessages :: ProtoT ()
     printMessages = do
       font <- asks systemFont
-      r <- asks renderer
       ts <- gets messages
       modify $ \s -> s {messages = []} -- Clear messages
-      foldM_ (work r font) 8 ts
+      withRenderer $ \r ->
+        foldM_ (work r font) 8 ts
       where
         work r font y text = liftIO $ do
           (w,h) <- sizeText font text
@@ -432,12 +436,17 @@ averageTime = do
              then 0
              else a `div` n
 
+withRenderer :: (MonadReader ProtoConfig m, MonadIO m) => (SDL.Renderer -> IO a) -> m a
+withRenderer act = do
+  mvar <- asks renderer
+  liftIO $ withMVar mvar act
+
 assert :: Bool -> IO ()
 assert = flip unless $ error "Assertion failed"
 
 --
 
 setRendererDrawBlendMode :: SDL.BlendMode -> ProtoT ()
-setRendererDrawBlendMode mode = do
-  r <- asks renderer
-  SDL.rendererDrawBlendMode r $= mode
+setRendererDrawBlendMode mode =
+  withRenderer $ \r ->
+    SDL.rendererDrawBlendMode r $= mode

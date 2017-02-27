@@ -31,9 +31,8 @@ import           Protonic.TTFHelper   (renderBlended, sizeText)
 -- TODO: Change color
 newSprite :: (MonadReader ProtoConfig m, MonadIO m) => Font -> V4 Word8 -> Text -> m Sprite
 newSprite (Font font) color text = do
-  rndr <- asks renderer
-  liftIO $ do
-    (w,h) <- sizeText font text
+  (w,h) <- sizeText font text
+  withRenderer $ \rndr -> do
     texture <- E.bracket (renderBlended font color text)
                          SDL.freeSurface
                          (SDL.createTextureFromSurface rndr)
@@ -43,16 +42,16 @@ freeSprite :: MonadIO m => Sprite -> m ()
 freeSprite (Sprite t _) = SDL.destroyTexture t
 
 loadSprite :: (MonadReader ProtoConfig m, MonadIO m) => FilePath -> V2 Int -> m Sprite
-loadSprite path size = do
-  r <- asks renderer
-  texture <- SDL.Image.loadTexture r path
-  return $ Sprite texture $ fromIntegral <$> size
+loadSprite path size =
+  withRenderer $ \r -> do
+    texture <- SDL.Image.loadTexture r path
+    return $ Sprite texture $ fromIntegral <$> size
 
 decodeSprite :: (MonadReader ProtoConfig m, MonadIO m) => ByteString -> V2 Int -> m Sprite
-decodeSprite bytes size = do
-  r <- asks renderer
-  texture <- SDL.Image.decodeTexture r bytes
-  return $ Sprite texture $ fromIntegral <$> size
+decodeSprite bytes size =
+  withRenderer $ \r -> do
+    texture <- SDL.Image.decodeTexture r bytes
+    return $ Sprite texture $ fromIntegral <$> size
 
 setBlendMode :: MonadIO m => Sprite -> SDL.BlendMode -> m ()
 setBlendMode s mode =

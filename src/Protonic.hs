@@ -1,8 +1,11 @@
 module Protonic
   (
     Proto
+  , ProtoConfig
   , ProtoT
+  , ProtoConfT
   , runProtoT
+  , runProtoConfT
   , withProtonic
   , runScene
   , Update, Render, Transit
@@ -14,6 +17,7 @@ module Protonic
   , Transition
   , continue, end, next, push
   --
+  , getProtoConfig
   , screenSize
   , getWindow
   , averageTime

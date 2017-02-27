@@ -12,6 +12,7 @@ module Protonic.Core
   , DebugJoystick (..)
   , Proto
   , ProtoT
+  , ProtoConfT
   , Render
   , Scene (..)
   , SceneState (..)
@@ -23,9 +24,11 @@ module Protonic.Core
   , runScene
   --
   , runProtoT
+  , runProtoConfT
   , withProtonic
   --
   , printsys
+  , getProtoConfig
   , screenSize
   , getWindow
   , averageTime
@@ -134,6 +137,13 @@ newtype ProtoT a = ProtoT {
 
 runProtoT :: Proto -> ProtoT a -> IO (a, ProtoState)
 runProtoT (Proto conf stt) k = runStateT (runReaderT (runPT k) conf) stt
+
+newtype ProtoConfT a = ProtoConfT {
+    runPCT :: ReaderT ProtoConfig IO a
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadReader ProtoConfig, MonadThrow, MonadCatch, MonadMask)
+
+runProtoConfT :: ProtoConfig -> ProtoConfT a -> IO a
+runProtoConfT conf k = runReaderT (runPCT k) conf
 
 withProtonic :: Config -> (Proto -> IO ()) -> IO ()
 withProtonic config go =
@@ -403,6 +413,9 @@ procEvents es = go =<< asks debugJoystick
       "Hat: " ++ show jid ++ " @ " ++ show hat ++ " - " ++ show value
 
 --
+
+getProtoConfig :: ProtoT ProtoConfig
+getProtoConfig = ask
 
 screenSize :: ProtoT (V2 Int)
 screenSize = asks scrSize

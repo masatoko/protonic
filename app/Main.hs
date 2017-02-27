@@ -3,6 +3,7 @@
 module Main where
 
 import           Control.Monad.IO.Class (liftIO)
+import           Control.Monad.Reader (ReaderT, ask, runReaderT)
 import           System.Environment (getArgs)
 import           Control.Monad.State
 import qualified Data.ByteString     as B
@@ -32,12 +33,14 @@ data Game = Game
 
 initGame :: ProtoT Game
 initGame = do
-  font <- P.newFont fontPath 50
-  char <- P.newSprite font (V4 255 255 255 255) "@"
-  img <- P.loadSprite "data/img.png" (pure 48)
-  P.freeFont font
-  liftIO . putStrLn $ "init Game"
-  return $ Game char img 0 0 []
+  pconf <- P.getProtoConfig
+  liftIO $ P.runProtoConfT pconf $ do
+    font <- P.newFont fontPath 50
+    char <- P.newSprite font (V4 255 255 255 255) "@"
+    img <- P.loadSprite "data/img.png" (pure 48)
+    P.freeFont font
+    liftIO . putStrLn $ "init Game"
+    return $ Game char img 0 0 []
   where
     fontPath = "data/font/system.ttf"
 

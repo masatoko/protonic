@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Protonic.Sprite
   ( newSprite
   , loadSprite
@@ -27,7 +29,7 @@ import           Protonic.Data        (Font (..), Sprite (..))
 import           Protonic.TTFHelper   (renderBlended, sizeText)
 
 -- TODO: Change color
-newSprite :: Font -> V4 Word8 -> Text -> ProtoT Sprite
+newSprite :: (MonadReader ProtoConfig m, MonadIO m) => Font -> V4 Word8 -> Text -> m Sprite
 newSprite (Font font) color text = do
   rndr <- asks renderer
   liftIO $ do
@@ -40,13 +42,13 @@ newSprite (Font font) color text = do
 freeSprite :: MonadIO m => Sprite -> m ()
 freeSprite (Sprite t _) = SDL.destroyTexture t
 
-loadSprite :: FilePath -> V2 Int -> ProtoT Sprite
+loadSprite :: (MonadReader ProtoConfig m, MonadIO m) => FilePath -> V2 Int -> m Sprite
 loadSprite path size = do
   r <- asks renderer
   texture <- SDL.Image.loadTexture r path
   return $ Sprite texture $ fromIntegral <$> size
 
-decodeSprite :: ByteString -> V2 Int -> ProtoT Sprite
+decodeSprite :: (MonadReader ProtoConfig m, MonadIO m) => ByteString -> V2 Int -> m Sprite
 decodeSprite bytes size = do
   r <- asks renderer
   texture <- SDL.Image.decodeTexture r bytes

@@ -70,6 +70,7 @@ data Config = Config
   { confWinSize :: V2 Int
   , confWinTitle :: String
   , confWindowMode :: SDL.WindowMode
+  , confDebugPrintFPS :: Bool
   , confDebugPrintSystem :: Bool
   , confDebugJoystick :: DebugJoystick
   , confNumAverageTime :: Int
@@ -87,6 +88,7 @@ defaultConfig = Config
   { confWinSize = V2 640 480
   , confWinTitle = "protonic"
   , confWindowMode = SDL.Windowed
+  , confDebugPrintFPS = False
   , confDebugPrintSystem = False
   , confDebugJoystick = DebugJoystick False False False
   , confNumAverageTime = 60
@@ -103,6 +105,7 @@ data ProtoConfig = ProtoConfig
   , renderer         :: MVar SDL.Renderer
   , systemFont       :: TTFFont
   -- Debug
+  , debugPrintFPS    :: Bool
   , debugPrintSystem :: Bool
   , debugJoystick    :: DebugJoystick
   , numAverateTime   :: Int
@@ -181,6 +184,7 @@ withProtonic config go =
         , window = win
         , renderer = mvar
         , systemFont = font
+        , debugPrintFPS = confDebugPrintFPS config
         , debugPrintSystem = confDebugPrintSystem config
         , debugJoystick = confDebugJoystick config
         , numAverateTime = confNumAverageTime config
@@ -355,10 +359,13 @@ sceneLoop iniG iniS scene =
 
     printSystemState :: SceneState -> ProtoT ()
     printSystemState stt = do
-      p <- asks debugPrintSystem
-      when p $ do
-        printsys . T.pack =<< (printf "FPS:%.2f") <$> gets actualFPS
+      p1 <- asks debugPrintSystem
+      when p1 $
         printsys . T.pack . ("Frame:" ++) . show . frameCount $ stt
+
+      p2 <- asks debugPrintFPS
+      when p2 $
+        printsys =<< (T.pack . show . truncate <$> gets actualFPS)
 
     advance :: SceneState -> SceneState
     advance s = s {frameCount = c + 1}

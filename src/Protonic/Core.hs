@@ -346,10 +346,12 @@ sceneLoop iniG iniS scene =
 
       -- Print meter
       p <- asks debugPrintSystem
-      when p $
+      when p $ printsys . T.pack $
         if tWait > 0
-          then printsys . T.pack $ replicate (fromIntegral tWait') '|'
-          else printsys . T.pack $ "NO WAIT"
+          then
+            let n = fromIntegral tWait'
+            in printf "%02d" n ++ " " ++ replicate n '.'
+          else "NO WAIT"
 
     preRender :: ProtoT ()
     preRender =
@@ -359,9 +361,9 @@ sceneLoop iniG iniS scene =
 
     printSystemState :: SceneState -> ProtoT ()
     printSystemState stt = do
-      p1 <- asks debugPrintSystem
-      when p1 $
-        printsys . T.pack . ("Frame:" ++) . show . frameCount $ stt
+      -- p1 <- asks debugPrintSystem
+      -- when p1 $
+      --   printsys . T.pack . show . frameCount $ stt
 
       p2 <- asks debugPrintFPS
       when p2 $

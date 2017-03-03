@@ -33,6 +33,7 @@ module Protonic.Core
   , screenSize
   , getWindow
   , averageTime
+  , showMessageBox
   , withRenderer
   , setRendererDrawBlendMode
   ) where
@@ -444,6 +445,11 @@ averageTime = do
   return $ if n == 0
              then 0
              else a `div` n
+
+showMessageBox :: (MonadReader ProtoConfig m, MonadIO m) => Text -> Text -> m ()
+showMessageBox title message = do
+  window <- Just <$> asks window
+  SDL.showSimpleMessageBox window SDL.Information title message
 
 withRenderer :: (MonadReader ProtoConfig m, MonadIO m) => (SDL.Renderer -> IO a) -> m a
 withRenderer act = do

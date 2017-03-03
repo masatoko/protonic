@@ -21,6 +21,7 @@ module Protonic
   , screenSize
   , getWindow
   , averageTime
+  , showMessageBox
   , setRendererDrawBlendMode
   -- Data
   , Font

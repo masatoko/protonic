@@ -41,6 +41,7 @@ import           Data.Int               (Int16, Int32)
 import           Data.Maybe             (catMaybes, mapMaybe, fromMaybe)
 import qualified Data.Vector            as V
 import           Data.Word              (Word8, Word32)
+import qualified Data.Map               as M
 import           Foreign.C.Types        (CInt)
 import           Linear.Affine
 import           Linear.V2
@@ -61,6 +62,8 @@ data Input = Input
   , joyButtons   :: [SDL.JoyButtonEventData]
   , joyAxes      :: [SDL.JoyAxisEventData]
   , touches      :: [SDL.TouchFingerEventData]
+  , joyAxesCurPos :: M.Map Word8 Int16
+  , joyAxesPrePos :: M.Map Word8 Int16
   , curHat       :: !HatValue -- TODO: Should identify joystick id and hat index
   , preHat       :: !HatValue
   , modState     :: !SDL.KeyModifier
@@ -90,7 +93,8 @@ data HatDir
 snapshotInput :: MonadIO m => Maybe Input -> [SDL.Event] -> m Input
 snapshotInput mPreInput es =
   Input (sel kb) (sel mm) (sel mb) (sel mw)
-        (sel jb) (sel ja) (sel td)
+        (sel jb) jaes (sel td)
+        curAxesPos preAxesPos
         curHat' preHat'
         <$> SDL.getModState
         <*> SDL.getKeyboardState
@@ -113,6 +117,7 @@ snapshotInput mPreInput es =
     jb _ = Nothing
     ja (SDL.JoyAxisEvent d) = Just d
     ja _ = Nothing
+    jaes = sel ja
     -- Touch
     td (SDL.TouchFingerEvent d) = Just d
     td _ = Nothing
@@ -124,6 +129,20 @@ snapshotInput mPreInput es =
       where
         hat (SDL.JoyHatEvent d) = Just $ SDL.joyHatEventValue d
         hat _                   = Nothing
+    --
+    preAxesPos =
+      case mPreInput of
+        Just pre -> joyAxesCurPos pre
+        Nothing  -> M.empty
+    curAxesPos =
+      case mPreInput of
+        Just pre -> (M.fromList $ map work jaes) `M.union` (joyAxesCurPos pre)
+        Nothing  -> M.empty
+      where
+        work jaed = (a,v)
+          where
+            a = SDL.joyAxisEventAxis jaed
+            v = SDL.joyAxisEventValue jaed
 
 newPad :: Metapad a
 newPad = Metapad []
@@ -284,20 +303,27 @@ isTargetButton joy button state e =
       isState = SDL.joyButtonEventState e == state
   in isId && isButton && isState
 
-joyAxis :: Joystick -> Word8 -> (Int16 -> Maybe act) -> Input -> IO (Maybe act)
-joyAxis joy axis make _ =
-  make <$> SDL.axisPosition (js joy) (fromIntegral axis)
+joyAxis :: Joystick -> Word8 -> (Int16 -> Int16 -> Maybe act) -> Input -> IO (Maybe act)
+joyAxis joy axis make i = return mact
+  where
+    mact = do
+      pre <- M.lookup axis $ joyAxesPrePos i
+      cur <- M.lookup axis $ joyAxesCurPos i
+      make pre cur
 
 joyAxis2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
 joyAxis2 joy a0 a1 make _ = fmap Just $
   make <$> SDL.axisPosition (js joy) (fromIntegral a0)
        <*> SDL.axisPosition (js joy) (fromIntegral a1)
 
-joyAxisChanged :: Joystick -> Word8 -> (Int16 -> act) -> Input -> IO (Maybe act)
-joyAxisChanged joy axis make i =
-  return . fmap make . headMay . mapMaybe work . joyAxes $ i
+joyAxisChanged :: Joystick -> Word8 -> (Int16 -> Int16 -> Maybe act) -> Input -> IO (Maybe act)
+joyAxisChanged joy axis make i = return mact
   where
     work = axisValue joy axis
+    mact = do
+      cur <- headMay . mapMaybe work . joyAxes $ i
+      pre <- M.lookup axis $ joyAxesPrePos i
+      make pre cur
 
 joyAxisChanged2 :: Joystick -> Word8 -> Word8 -> (Int16 -> Int16 -> act) -> Input -> IO (Maybe act)
 joyAxisChanged2 joy a0 a1 make i =

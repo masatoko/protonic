@@ -174,7 +174,7 @@ withProtonic config go =
                   freeFont
                   act
       where
-        size = h `div` 60
+        size = h `div` 50
         V2 _ h = confWinSize config
 
     mkConf font win r = do

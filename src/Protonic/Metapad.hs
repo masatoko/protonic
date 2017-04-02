@@ -16,6 +16,7 @@ module Protonic.Metapad
   , hold, pressed, released
   -- Joystick
   , monitorJoystick
+  , numAxes, axisPosition
   , joyHold, joyPressed, joyReleased
   , joyAxis, joyAxis2
   , joyAxisChanged, joyAxisChanged2
@@ -256,6 +257,12 @@ monitorJoystick joy = do
           deg = truncate $ (v + 1) * 10
           p = take 20 $ replicate deg '*' ++ repeat '-'
       in show i ++ ": " ++ p ++ " ... " ++ show v
+
+numAxes :: Joystick -> IO Int
+numAxes joy = fromIntegral <$> SDL.numAxes (js joy)
+
+axisPosition :: Joystick -> Word8 -> IO Int16
+axisPosition joy idx = SDL.axisPosition (js joy) (fromIntegral idx)
 
 joyHold :: Joystick -> Word8 -> act -> Input -> IO (Maybe act)
 joyHold joy button act _ = do

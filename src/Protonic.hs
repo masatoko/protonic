@@ -56,6 +56,7 @@ module Protonic
   , Joystick
   , monitorJoystick
   , newJoystickAt, freeJoystick
+  , numAxes, axisPosition
   , joyHold, joyPressed, joyReleased
   , joyAxis, joyAxis2
   , joyAxisChanged, joyAxisChanged2

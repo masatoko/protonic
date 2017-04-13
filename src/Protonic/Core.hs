@@ -428,13 +428,13 @@ procEvents es = go =<< asks debugJoystick
 
 --
 
-getProtoConfig :: ProtoT ProtoConfig
+getProtoConfig :: (MonadReader ProtoConfig m, MonadIO m) => m ProtoConfig
 getProtoConfig = ask
 
-screenSize :: ProtoT (V2 Int)
+screenSize :: (MonadReader ProtoConfig m, MonadIO m) => m (V2 Int)
 screenSize = asks scrSize
 
-getWindow :: ProtoT SDL.Window
+getWindow :: (MonadReader ProtoConfig m, MonadIO m) => m SDL.Window
 getWindow = asks window
 
 averageTime :: ProtoT Int

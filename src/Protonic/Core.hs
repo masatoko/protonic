@@ -179,7 +179,7 @@ withProtonic config go =
 
     mkConf font win r = do
       mvar <- newMVar r
-      return $ ProtoConfig
+      return ProtoConfig
         { graphFPS = 60
         , scrSize = confWinSize config
         , window = win
@@ -394,7 +394,7 @@ sceneLoop iniG iniS scene =
 printsys :: Text -> ProtoT ()
 printsys text
   | T.null text = return ()
-  | otherwise   = modify $ \s -> s {messages = text:(messages s)}
+  | otherwise   = modify $ \s -> s {messages = text : messages s}
 
 -- | Open font after check if font file exists
 openFont :: String -> Int -> IO TTFFont

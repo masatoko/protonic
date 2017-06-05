@@ -3,7 +3,6 @@
 module Main where
 
 import           Control.Monad.IO.Class (liftIO)
-import           Control.Monad.Reader (ReaderT, ask, runReaderT)
 import           System.Environment (getArgs)
 import           Control.Monad.State
 import qualified Data.ByteString     as B
@@ -59,7 +58,7 @@ main = do
   withProtonic conf' $ \proto -> do
     mjs <- P.newJoystickAt 0
     let gamepad = mkGamepad mjs
-    _ <- runProtoT proto $ do
+    _ <- runProtoT proto $
       -- testGlyphMetrics
       runScene $ titleScene mjs gamepad
     maybe (return ()) P.freeJoystick mjs
@@ -67,10 +66,10 @@ main = do
   where
     mkConf pBtn pAxis pHat =
       P.defaultConfig
-        { P.confWinSize = V2 300 300
+        { P.confWinSize = V2 640 480
         , P.confWinTitle = "protpnic-app"
-        -- , P.confWindowMode = SDL.Fullscreen
-        , P.confWindowMode = SDL.Windowed
+        , P.confWindowMode = SDL.Fullscreen
+        -- , P.confWindowMode = SDL.Windowed
         , P.confDebugPrintSystem = True
         , P.confDebugJoystick = P.DebugJoystick pBtn pAxis pHat
         }
@@ -246,6 +245,6 @@ clearScene mjs score pad = Scene pad update render transit initGame freeGame
       P.printTest (P (V2 10 120)) (V4 255 255 255 255) $ T.pack ("Score: " ++ show score)
       P.printTest (P (V2 10 140)) (V4 255 255 255 255) "Enter - title"
 
-    transit _ as g
+    transit _ as _g
       | Enter `elem` as = P.next $ titleScene mjs pad
       | otherwise       = P.continue

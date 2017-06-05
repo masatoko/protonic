@@ -48,9 +48,10 @@ import           Linear.V2
 import           Safe                   (headMay)
 
 import qualified SDL
-import qualified SDL.Haptic as HAP
-
-type HatValue = Word8
+-- import qualified SDL.Haptic as HAP
+import qualified SDL.Raw.Haptic as HAP
+import SDL.Raw.Types (Haptic)
+import SDL.Internal.Types (joystickPtr)
 
 data Metapad a = Metapad [Input -> IO (Maybe a)]
 
@@ -64,8 +65,8 @@ data Input = Input
   , touches      :: [SDL.TouchFingerEventData]
   , joyAxesCurPos :: M.Map Word8 Int16
   , joyAxesPrePos :: M.Map Word8 Int16
-  , curHat       :: !HatValue -- TODO: Should identify joystick id and hat index
-  , preHat       :: !HatValue
+  , curHat       :: !SDL.JoyHatPosition -- TODO: Should identify joystick id and hat index
+  , preHat       :: !SDL.JoyHatPosition
   , modState     :: !SDL.KeyModifier
   , keyState     :: SDL.Scancode -> Bool
   , mousePos     :: Point V2 CInt
@@ -122,10 +123,8 @@ snapshotInput mPreInput es =
     td (SDL.TouchFingerEvent d) = Just d
     td _ = Nothing
     --
-    preHat' = fromMaybe 0 $ curHat <$> mPreInput
-    curHat' = case headMay $ sel hat of
-                Nothing -> preHat'
-                Just v  -> v
+    preHat' = fromMaybe SDL.HatCentered $ curHat <$> mPreInput
+    curHat' = fromMaybe preHat' $ headMay $ sel hat
       where
         hat (SDL.JoyHatEvent d) = Just $ SDL.joyHatEventValue d
         hat _                   = Nothing
@@ -136,7 +135,7 @@ snapshotInput mPreInput es =
         Nothing  -> M.empty
     curAxesPos =
       case mPreInput of
-        Just pre -> (M.fromList $ map work jaes) `M.union` (joyAxesCurPos pre)
+        Just pre -> M.fromList (map work jaes) `M.union` joyAxesCurPos pre
         Nothing  -> M.empty
       where
         work jaed = (a,v)
@@ -228,7 +227,7 @@ type JoystickID = Int32
 data Joystick = Joy
   { js :: !SDL.Joystick
   , jsId :: !JoystickID
-  , jsHap :: !(Maybe HAP.HapticDevice)
+  , jsHap :: !(Maybe Haptic)
   } deriving (Eq, Show)
 
 newJoystickAt :: MonadIO m => Int -> m (Maybe Joystick)
@@ -244,18 +243,18 @@ newJoystickAt i = do
       mapM_ HAP.hapticRumbleInit mHap
       Joy j <$> SDL.getJoystickID j <*> pure mHap
       where
-        getHaptic :: IO (Maybe HAP.HapticDevice)
+        getHaptic :: IO (Maybe Haptic)
         getHaptic =
-          (Just <$> HAP.openHaptic (HAP.OpenHapticJoystick j)) `E.catch` handler
+          (Just <$> HAP.hapticOpenFromJoystick (joystickPtr j)) `E.catch` handler
 
-        handler :: E.SomeException -> IO (Maybe HAP.HapticDevice)
+        handler :: E.SomeException -> IO (Maybe Haptic)
         handler _e =
           -- putStrLn $ "Exception @getHaptic: " ++ show e
           return Nothing
 
 freeJoystick :: MonadIO m => Joystick -> m ()
 freeJoystick joy = do
-  mapM_ HAP.closeHaptic $ jsHap joy
+  mapM_ HAP.hapticClose $ jsHap joy
   SDL.closeJoystick $ js joy
 
 -- for test
@@ -350,8 +349,8 @@ joyAllButtons joy mkAct i =
       in boolToMaybe (SDL.joyButtonEventButton e) $ isId && isState
 
 joyAllAxes :: Joystick -> ([(Word8, Int16)] -> act) -> Input -> IO (Maybe act)
-joyAllAxes joy mkAct input =
-  return . Just . mkAct . mapMaybe toAxis . joyAxes $ input
+joyAllAxes joy mkAct =
+  return . Just . mkAct . mapMaybe toAxis . joyAxes
   where
     toAxis e =
       let axis = SDL.joyAxisEventAxis e
@@ -361,8 +360,11 @@ joyAllAxes joy mkAct input =
 
 -- Hat
 
-isHatOn :: HatValue -> HatDir -> Bool
-isHatOn val dir = testBit val $ fromEnum dir
+isHatOn :: SDL.JoyHatPosition -> HatDir -> Bool
+isHatOn pos HDUp    = pos `elem` [SDL.HatUp, SDL.HatRightUp, SDL.HatLeftUp]
+isHatOn pos HDDown  = pos `elem` [SDL.HatDown, SDL.HatRightDown, SDL.HatLeftDown]
+isHatOn pos HDLeft  = pos `elem` [SDL.HatLeft, SDL.HatLeftUp, SDL.HatLeftDown]
+isHatOn pos HDRight = pos `elem` [SDL.HatRight, SDL.HatRightUp, SDL.HatRightDown]
 
 joyHat :: HatDir -> InputMotion -> act -> Input -> IO (Maybe act)
 joyHat hatDir motion act input =
@@ -388,11 +390,11 @@ joyAllHat mkAct input =
 -- strength: 0 - 1
 -- len:      msec
 rumble :: MonadIO m => Joystick -> Double -> Word32 -> m ()
-rumble joy strength len =
-  liftIO $ forM_ (jsHap joy) $ \dev ->
-    HAP.hapticRumblePlay dev str' len
+rumble joy strength lengthMSec =
+  liftIO $ forM_ (jsHap joy) $ \haptic ->
+    HAP.hapticRumblePlay haptic strength' lengthMSec
   where
-    str' = realToFrac strength
+    strength' = realToFrac strength
 
 -- Utility
 

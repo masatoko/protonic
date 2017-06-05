@@ -22,7 +22,8 @@ import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable
 import           Linear.V4
 
-import qualified Graphics.UI.SDL.TTF.FFI as FFI
+import qualified SDL.TTF.FFI             as FFI
+
 import qualified SDL
 import           SDL.Raw                 (Color (..), Surface, RWops)
 import           SDL.Raw.Filesystem      (rwFromConstMem)

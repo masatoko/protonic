@@ -55,8 +55,8 @@ import           System.Exit             (exitSuccess)
 import           System.Directory        (doesFileExist)
 import           Text.Printf             (printf)
 
-import qualified Graphics.UI.SDL.TTF     as TTF
-import           Graphics.UI.SDL.TTF.FFI (TTFFont)
+import qualified SDL.TTF                 as TTF
+import           SDL.TTF.FFI             (TTFFont)
 import           SDL                     (($=))
 import qualified SDL
 -- import qualified SDL.Raw.Mixer           as Mix

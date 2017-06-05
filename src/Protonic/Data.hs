@@ -3,11 +3,11 @@ module Protonic.Data
   , Sprite (..)
   ) where
 
-import           Foreign.C.Types         (CInt)
+import           Foreign.C.Types (CInt)
 import           Linear.V2
 
-import           Graphics.UI.SDL.TTF.FFI (TTFFont)
 import qualified SDL
+import           SDL.TTF.FFI     (TTFFont)
 
 data Font = Font TTFFont
 

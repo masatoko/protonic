@@ -16,7 +16,7 @@ import           System.Directory         (doesFileExist)
 import           Foreign.ForeignPtr       (withForeignPtr)
 import           Foreign.Ptr              (plusPtr)
 
-import qualified Graphics.UI.SDL.TTF      as TTF
+import qualified SDL.TTF                  as TTF
 
 import           Protonic.Data            (Font (..), Sprite (..))
 import           Protonic.TTFHelper       (GlyphMetrics (..), rawGlyphMetrics, fontFromBytes)
